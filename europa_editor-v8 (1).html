@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Star Field Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0e0e0f; --panel: #141415;
+  --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --text: #e8e8e4; --text2: #888884; --text3: #444442;
+  --accent: #c8c8c0; --pill-on: #e8e8e4; --pill-on-text: #0e0e0f;
+  --thumb: #666660; --track: #2a2a2c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); }
+body { display: flex; font-family: 'DM Sans', sans-serif; color: var(--text); font-size: 13px; }
+
+/* SIDEBAR */
+#sidebar {
+  width: 240px; min-width: 240px; height: 100vh;
+  background: var(--panel); border-right: 0.5px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+}
+#sidebar-brand { padding: 14px 16px 10px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
+#sidebar-brand h1 { font-size: 13px; font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); font-family: 'DM Mono', monospace; }
+#sidebar-brand p { font-size: 11px; color: var(--text3); margin-top: 3px; font-family: 'DM Mono', monospace; }
+
+/* Tab bar */
+#sidebar-tabs { display: flex; flex-shrink: 0; border-bottom: 0.5px solid var(--border); }
+.stab { flex: 1; padding: 10px 0 9px; font-size: 10px; font-family: 'DM Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); background: none; border: none; cursor: pointer; border-bottom: 1.5px solid transparent; margin-bottom: -0.5px; transition: color 0.15s, border-color 0.15s; }
+.stab:hover { color: var(--text2); }
+.stab.on { color: var(--text); border-bottom-color: var(--text); }
+
+/* Tab panels */
+#tab-editor  { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+#tab-presets { display: none; flex-direction: column; flex: 1; min-height: 0; }
+
+/* Editor scroll */
+#sidebar-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: var(--track) transparent; }
+#sidebar-scroll::-webkit-scrollbar { width: 3px; }
+#sidebar-scroll::-webkit-scrollbar-thumb { background: var(--track); border-radius: 2px; }
+
+.section { border-bottom: 0.5px solid var(--border); }
+.section-head { padding: 11px 16px 9px; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); font-family: 'DM Mono', monospace; }
+.section-body { padding: 4px 14px 12px; }
+
+.pill-row { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 0 4px; }
+.pill { font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 0.5px solid var(--border2); color: var(--text2); background: transparent; cursor: pointer; transition: all 0.15s; font-family: 'DM Mono', monospace; letter-spacing: 0.02em; }
+.pill:hover { border-color: var(--accent); color: var(--text); }
+.pill.on { background: var(--pill-on); color: var(--pill-on-text); border-color: transparent; }
+
+.ctrl { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+.ctrl label { font-size: 11px; color: var(--text2); min-width: 72px; font-family: 'DM Mono', monospace; }
+.ctrl input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 2px; background: var(--track); border-radius: 1px; outline: none; cursor: pointer; }
+.ctrl input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--thumb); border: 1.5px solid var(--text); transition: background 0.15s; }
+.ctrl input[type=range]:hover::-webkit-slider-thumb { background: var(--text); }
+.ctrl .val { font-size: 11px; color: var(--text2); min-width: 30px; text-align: right; font-family: 'DM Mono', monospace; }
+
+.export-btn { margin: 12px 14px 14px; width: calc(100% - 28px); padding: 9px; background: transparent; border: 0.5px solid var(--border2); color: var(--text2); font-size: 11px; font-family: 'DM Mono', monospace; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; border-radius: 6px; transition: all 0.15s; }
+.export-btn:hover { border-color: var(--accent); color: var(--text); background: rgba(255,255,255,0.04); }
+
+/* Locked idle card */
+.pcard-locked {
+  border-color: rgba(100,180,255,0.25) !important;
+  background: rgba(100,180,255,0.04) !important;
+  cursor: default !important;
+}
+.pcard-locked:hover { border-color: rgba(100,180,255,0.35) !important; }
+
+/* Presets tab */
+#presets-panel { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: var(--track) transparent; padding: 10px 10px 4px; display: flex; flex-direction: column; gap: 6px; }
+#presets-panel::-webkit-scrollbar { width: 3px; }
+#presets-panel::-webkit-scrollbar-thumb { background: var(--track); border-radius: 2px; }
+#presets-bottom { flex-shrink: 0; border-top: 0.5px solid var(--border); padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 5px; }
+#preset-name-row { display: flex; gap: 5px; align-items: center; }
+#preset-name-input { flex: 1; background: transparent; border: 0.5px solid var(--border2); border-radius: 6px; padding: 7px 9px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; outline: none; transition: border-color 0.15s; }
+#preset-name-input:focus { border-color: var(--accent); }
+#presets-empty { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text3); text-align: center; padding: 28px 0 8px; line-height: 2; }
+
+.pcard { border: 0.5px solid var(--border); border-radius: 8px; padding: 9px 10px; cursor: pointer; transition: border-color 0.15s, background 0.15s; background: transparent; }
+.pcard:hover { border-color: var(--border2); background: rgba(255,255,255,0.025); }
+.pcard.active { border-color: var(--accent); }
+.pcard-top { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.pcard-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pcard-name { flex: 1; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pcard.active .pcard-name { color: var(--text); }
+.pcard-del { font-size: 15px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 0 2px; line-height: 1; transition: color 0.12s; }
+.pcard-del:hover { color: var(--text2); }
+.pcard-meta { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); letter-spacing: 0.04em; line-height: 1.7; }
+.pcard-thumb { width: 100%; border-radius: 4px; margin-top: 7px; display: block; opacity: 0.65; }
+
+/* Role badge on preset card */
+.role-badge {
+  font-size: 9px; font-family: 'DM Mono', monospace; letter-spacing: 0.08em;
+  padding: 2px 6px; border-radius: 10px; font-weight: 400; flex-shrink: 0;
+}
+.role-badge.idle     { background: rgba(100,180,255,0.12); color: #6ab4ff; border: 0.5px solid rgba(100,180,255,0.25); }
+.role-badge.thinking { background: rgba(255,190,80,0.12);  color: #ffbe50; border: 0.5px solid rgba(255,190,80,0.25); }
+.role-badge.speaking { background: rgba(180,120,255,0.12); color: #c07cff; border: 0.5px solid rgba(180,120,255,0.25); }
+
+/* Pairs section */
+#pairs-section { border-top: 0.5px solid var(--border); padding: 8px 10px 6px; flex-shrink: 0; }
+#pairs-head { font-size: 10px; font-family: 'DM Mono', monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+.pair-row {
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 7px;
+  border: 0.5px solid var(--border); cursor: pointer; transition: all 0.15s; margin-bottom: 4px;
+}
+.pair-row:hover { border-color: var(--border2); background: rgba(255,255,255,0.025); }
+.pair-row.active { border-color: var(--accent); background: rgba(255,255,255,0.04); }
+.pair-row.active .pair-label { color: var(--text); }
+.pair-thumb { width: 28px; height: 28px; border-radius: 4px; object-fit: cover; flex-shrink: 0; opacity: 0.8; }
+.pair-thumb-empty { width: 28px; height: 28px; border-radius: 4px; background: var(--track); flex-shrink: 0; }
+.pair-label { flex: 1; min-width: 0; }
+.pair-label-main { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pair-label-sub  { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.pair-arrow { font-size: 10px; color: var(--text3); flex-shrink: 0; }
+.pair-deact { font-size: 13px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 0 2px; flex-shrink: 0; }
+.pair-deact:hover { color: var(--text2); }
+#pairs-empty { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); text-align: center; padding: 4px 0 6px; line-height: 1.8; }
+
+/* Canvas area */
+#main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); position: relative; overflow: hidden; }
+#canvas-wrap { position: relative; transition: background 0.4s; }
+#canvas-wrap.bg-dark  { background: #0e0e0f; }
+#canvas-wrap.bg-mid   { background: #1e1e20; }
+#canvas-wrap.bg-light { background: #f0f0ec; }
+#canvas-wrap.bg-white { background: #ffffff; }
+canvas { display: block; }
+#bottom-bar { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; background: rgba(20,20,21,0.85); backdrop-filter: blur(8px); border: 0.5px solid var(--border2); border-radius: 24px; padding: 6px 10px; }
+#bottom-bar .pill { font-size: 11px; }
+#format-badge { position: absolute; top: 18px; right: 18px; font-size: 10px; font-family: 'DM Mono', monospace; color: var(--text3); letter-spacing: 0.08em; }
+
+/* Preset modal */
+#pmodal { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); align-items: center; justify-content: center; }
+#pmodal-box { background: #141415; border: 0.5px solid rgba(255,255,255,0.12); border-radius: 12px; width: 400px; max-width: 96vw; display: flex; flex-direction: column; overflow: hidden; }
+#pmodal-head { display: flex; align-items: center; gap: 9px; padding: 12px 14px; border-bottom: 0.5px solid rgba(255,255,255,0.07); }
+#pmodal-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+#pmodal-name { flex: 1; background: transparent; border: none; outline: none; font-family: 'DM Mono', monospace; font-size: 12px; color: #e8e8e4; }
+#pmodal-close { background: none; border: none; color: #555; font-size: 20px; cursor: pointer; line-height: 1; padding: 0 2px; }
+#pmodal-close:hover { color: var(--text2); }
+#pmodal-preview { display: flex; align-items: center; justify-content: center; padding: 16px; }
+#pmodal-canvas { max-width: 100%; max-height: 260px; display: block; border-radius: 4px; }
+#pmodal-meta { padding: 8px 14px; font-size: 10px; font-family: 'DM Mono', monospace; color: #444442; letter-spacing: 0.05em; line-height: 1.8; border-top: 0.5px solid rgba(255,255,255,0.07); }
+#pmodal-actions { display: flex; gap: 6px; padding: 10px 14px; border-top: 0.5px solid rgba(255,255,255,0.07); }
+#pmodal-actions .export-btn { margin: 0; flex: 1; padding: 8px; }
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div id="sidebar-brand">
+    <h1>Star Field</h1>
+    <p>generative · europa</p>
+  </div>
+  <div id="sidebar-tabs">
+    <button class="stab on" onclick="switchTab('editor')">Editor</button>
+    <button class="stab"    onclick="switchTab('presets')">Presets</button>
+  </div>
+
+  <!-- EDITOR TAB -->
+  <div id="tab-editor">
+    <div style="padding:8px 14px;border-bottom:0.5px solid var(--border);flex-shrink:0">
+      <button class="export-btn" style="margin:0;width:100%;padding:7px" onclick="switchTab('presets')">+ Save preset →</button>
+    </div>
+    <div id="sidebar-scroll">
+
+      <div class="section">
+        <div class="section-head">Format</div>
+        <div class="section-body">
+          <div class="pill-row" id="fmtBtns">
+            <button class="pill on" onclick="setFmt('sq',event)">1:1</button>
+            <button class="pill"    onclick="setFmt('wide',event)">16:9</button>
+            <button class="pill"    onclick="setFmt('tall',event)">9:16</button>
+            <button class="pill"    onclick="setFmt('wide3',event)">3:1</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">Background</div>
+        <div class="section-body">
+          <div class="pill-row" id="bgBtns">
+            <button class="pill on" onclick="setBg('bg-dark',event)">Black</button>
+            <button class="pill"    onclick="setBg('bg-mid',event)">Dark</button>
+            <button class="pill"    onclick="setBg('bg-light',event)">Light</button>
+            <button class="pill"    onclick="setBg('bg-white',event)">White</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">State</div>
+        <div class="section-body">
+          <div class="pill-row" id="stateBtns">
+            <button class="pill on" onclick="setSt('idle')">Idle</button>
+            <button class="pill"    onclick="setSt('thinking')">Thinking</button>
+            <button class="pill"    onclick="setSt('speaking')">Speaking</button>
+          </div>
+          <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+            <button class="pill" id="lockIdleBtn" onclick="toggleLockIdle()">🔒 Lock Idle</button>
+            <span id="lockIdleLabel" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">unlocked</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">Animation</div>
+        <div class="section-body">
+          <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:0.06em;margin-bottom:5px">IDLE</div>
+          <div class="pill-row" id="idleAnimBtns">
+            <button class="pill on" onclick="setIdleAnim('spin')">Spin</button>
+          </div>
+          <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:0.06em;margin:10px 0 5px">ACTIVE</div>
+          <div class="pill-row" id="speakAnimBtns">
+            <button class="pill on" onclick="setSpeakAnim('morph')">Morph</button>
+            <button class="pill"    onclick="setSpeakAnim('fullfield')">Field</button>
+            <button class="pill"    onclick="setSpeakAnim('organic')">Organic</button>
+            <button class="pill"    onclick="setSpeakAnim('pulse')">Pulse</button>
+            <button class="pill"    onclick="setSpeakAnim('spin')">Spin</button>
+            <button class="pill"    onclick="setSpeakAnim('drift')">Drift</button>
+            <button class="pill"    onclick="setSpeakAnim('wave')">Wave</button>
+            <button class="pill"    onclick="setSpeakAnim('grid')">Grid</button>
+            <button class="pill"    onclick="setSpeakAnim('web')">Web</button>
+            <button class="pill"    onclick="setSpeakAnim('breathe')">Breathe</button>
+            <button class="pill"    onclick="setSpeakAnim('vortex')">Vortex</button>
+            <button class="pill"    onclick="setSpeakAnim('scatter')">Scatter</button>
+            <button class="pill"    onclick="setSpeakAnim('ripple')">Ripple</button>
+            <button class="pill"    onclick="setSpeakAnim('constellation')">Constellation</button>
+            <button class="pill"    onclick="setSpeakAnim('flow')">Flow</button>
+          </div>
+          <div class="ctrl" id="morphNote" style="padding-top:6px;display:none">
+            <label style="color:var(--text3);font-size:10px;min-width:unset">Size sliders inactive in Morph mode</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" id="nonMorphControls">
+        <div class="section-head">Motion</div>
+        <div class="section-body">
+          <div class="ctrl">
+            <label>Speed</label>
+            <input type="range" min="1" max="30" step="1" value="10" id="speedSlider">
+            <span class="val" id="speedVal">1.0×</span>
+          </div>
+          <div class="ctrl">
+            <label>Amp</label>
+            <input type="range" min="0" max="30" step="1" value="13" id="ampSlider">
+            <span class="val" id="ampVal">13</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">Stars</div>
+        <div class="section-body">
+          <div class="ctrl">
+            <label>Count</label>
+            <input type="range" min="3" max="32" step="1" value="12" id="countSlider">
+            <span class="val" id="countVal">12</span>
+          </div>
+          <div class="ctrl">
+            <label>Size</label>
+            <input type="range" min="4" max="28" step="1" value="11" id="sizeSlider">
+            <span class="val" id="sizeVal">11</span>
+          </div>
+          <div class="ctrl">
+            <label>Radius</label>
+            <input type="range" min="20" max="160" step="1" value="88" id="radiusSlider">
+            <span class="val" id="radiusVal">88</span>
+          </div>
+          <div class="ctrl">
+            <label>Sharpness</label>
+            <input type="range" min="20" max="70" step="1" value="42" id="innerSlider">
+            <span class="val" id="innerVal">0.42</span>
+          </div>
+          <div class="ctrl">
+            <label>Glow</label>
+            <input type="range" min="0" max="10" step="1" value="4" id="glowSlider">
+            <span class="val" id="glowVal">4</span>
+          </div>
+          <div class="ctrl">
+            <label>Opacity</label>
+            <input type="range" min="5" max="100" step="1" value="45" id="opSlider">
+            <span class="val" id="opVal">0.45</span>
+          </div>
+          <div style="padding:6px 0 2px;display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="pill" id="stabilizeBtn" onclick="toggleStabilize()">Lock rotation</button>
+              <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">← fixes star rotation</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="pill" id="stabilizePosBtn" onclick="toggleStabilizePos()">Lock position</button>
+              <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">← fixes orbit drift</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="pill" id="fixAxisBtn" onclick="toggleFixAxis()">Lock axis</button>
+              <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">← tip always up</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="pill" id="fixSizeBtn" onclick="toggleFixSize()">Lock size</button>
+              <span style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace">← no size variation</span>
+            </div>
+          </div>
+          <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">
+            <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:0.06em;margin-bottom:6px">PULZÁLÁS / FORGÁS</div>
+            <div class="ctrl">
+              <label>Pulzálás</label>
+              <input type="range" min="0" max="20" step="1" value="8" id="pulseSlider">
+              <span class="val" id="pulseVal">0.8</span>
+            </div>
+            <div class="ctrl">
+              <label>Forgás erő</label>
+              <input type="range" min="0" max="20" step="1" value="4" id="spinSlider">
+              <span class="val" id="spinVal">0.4</span>
+            </div>
+            <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px">Fonal: globális forgás · Morph/Forgó: saját tengely</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">Overlay</div>
+        <div class="section-body">
+          <div class="pill-row">
+            <button class="pill" id="axisBtn" onclick="toggleAxis()">X-Y axis</button>
+          </div>
+          <div style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px;margin-bottom:8px">← show coordinate axes</div>
+          <div class="ctrl">
+            <label>Grid radius</label>
+            <input type="range" min="40" max="300" step="10" value="110" id="gridRadiusSlider">
+            <span class="val" id="gridRadiusVal">110</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">Export</div>
+        <div class="section-body">
+          <div class="ctrl">
+            <label>Duration</label>
+            <input type="range" min="5" max="10" step="1" value="5" id="durSlider">
+            <span class="val" id="durVal">5s</span>
+          </div>
+          <div style="margin-top:4px;padding-bottom:2px">
+            <div id="rec-progress" style="display:none;margin-bottom:8px">
+              <div style="height:2px;background:var(--track);border-radius:1px;overflow:hidden">
+                <div id="rec-bar" style="height:100%;width:0%;background:var(--text2);transition:width 0.1s;border-radius:1px"></div>
+              </div>
+              <div id="rec-label" style="font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:5px;text-align:center">0%</div>
+            </div>
+            <button class="export-btn" id="mp4Btn" onclick="exportMP4()" style="margin:0;width:100%">↓ Export MP4</button>
+          </div>
+        </div>
+      </div>
+      <div style="height:6px"></div>
+      <button class="export-btn" onclick="exportPNG()" style="margin:0 14px 14px;width:calc(100% - 28px)">↓ Export PNG</button>
+
+    </div><!-- end sidebar-scroll -->
+  </div><!-- end tab-editor -->
+
+  <!-- PRESETS TAB -->
+  <div id="tab-presets">
+    <div id="presets-panel"></div>
+    <div id="pairs-section">
+      <div id="pairs-head">Pairs</div>
+      <div id="pairs-list"></div>
+    </div>
+    <div id="presets-bottom">
+      <div id="preset-name-row">
+        <input id="preset-name-input" type="text" placeholder="preset name…"
+          onkeydown="if(event.key==='Enter')savePreset()">
+        <button class="export-btn" style="margin:0;padding:7px 10px;white-space:nowrap;width:auto" onclick="savePreset()">+ Save</button>
+      </div>
+      <div style="display:flex;gap:5px">
+        <button class="export-btn" style="margin:0;flex:1" onclick="exportPresetsJSON()">↓ JSON</button>
+        <button class="export-btn" style="margin:0;flex:1" onclick="importPresetsJSON()">↑ JSON</button>
+      </div>
+      <input type="file" id="preset-file-input" accept=".json" style="display:none" onchange="handlePresetFileImport(event)">
+    </div>
+  </div><!-- end tab-presets -->
+
+</aside>
+
+<main id="main">
+  <div id="format-badge">1:1 · 600px</div>
+  <div id="canvas-wrap" class="bg-dark">
+    <canvas id="c"></canvas>
+  </div>
+  <div id="bottom-bar">
+    <button class="pill on" id="bb-idle"     onclick="setSt('idle')">Idle</button>
+    <button class="pill"    id="bb-thinking" onclick="setSt('thinking')">Thinking</button>
+    <button class="pill"    id="bb-speaking" onclick="setSt('speaking')">Speaking</button>
+  </div>
+</main>
+
+<!-- PRESET MODAL -->
+<div id="pmodal" onclick="if(event.target===this)closePModal()">
+  <div id="pmodal-box">
+    <div id="pmodal-head">
+      <div id="pmodal-dot"></div>
+      <input id="pmodal-name" type="text">
+      <button id="pmodal-close" onclick="closePModal()">×</button>
+    </div>
+    <div id="pmodal-preview">
+      <canvas id="pmodal-canvas"></canvas>
+    </div>
+    <div id="pmodal-meta"></div>
+    <div id="pmodal-actions">
+      <button class="export-btn" onclick="pmodalLoad()">Load</button>
+      <button class="export-btn" onclick="pmodalOverwrite()">Overwrite</button>
+      <button class="export-btn" onclick="pmodalDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const cv = document.getElementById('c');
+const ct = cv.getContext('2d');
+let W, H, CX, CY;
+
+let state = 'idle', t = 0, blend = 0;
+let bgClass = 'bg-dark', colorKey = 'gray';
+let idleAnim = 'spin', speakAnim = 'morph';
+let starCount = 12, baseSize = 11, orbitRadius = 88, innerRatio = 0.42;
+let glowRings = 4, speedMult = 1.0, movementAmp = 13, opacity = 0.45;
+let fmt = 'sq';
+let stabilize = false, stabilizePos = false, fixAxis = false, fixSize = false;
+let showAxis = false, mouseX = -9999, mouseY = -9999, gridInfluenceRadius = 110;
+let idleLocked = false;   // when true, idle settings are frozen
+let lockedIdleSettings = null; // snapshot of idle settings when locked
+let pulseAmt = 0.8;   // pulse strength (0 = no pulse, 2 = strong)
+let spinAmt  = 0.4;   // ring spin speed multiplier
+
+const fmts = {
+  sq:    { w: 600, h: 600,  label: '1:1 · 600px' },
+  wide:  { w: 640, h: 360,  label: '16:9 · 640px' },
+  tall:  { w: 360, h: 640,  label: '9:16 · 640px' },
+  wide3: { w: 720, h: 240,  label: '3:1 · 720px' },
+};
+const palette = {
+  gray:   { r:160,g:160,b:154 }, blue:   { r:74, g:144,b:217 },
+  purple: { r:139,g:111,b:212 }, green:  { r:76, g:175,b:125 },
+  amber:  { r:212,g:160,b:48  }, coral:  { r:212,g:96, b:80  },
+  pink:   { r:212,g:96, b:144 }, teal:   { r:64, g:192,b:192 },
+};
+const noiseBase = Array.from({length:32}, (_, i) => ({
+  sp1: 0.3+((i*7)%10)*0.05, sp2: 0.3+((i*13)%10)*0.05, sp3: 0.4+((i*17)%10)*0.05,
+  ph1: (i/32)*Math.PI*2, ph2: ((i+10)/32)*Math.PI*2,
+}));
+
+function setFmt(f, ev) {
+  fmt = f;
+  document.querySelectorAll('#fmtBtns .pill').forEach(b => b.classList.remove('on'));
+  if (ev) ev.target.classList.add('on');
+  applyFmt();
+}
+function applyFmt() {
+  const f = fmts[fmt];
+  cv.width = f.w; cv.height = f.h;
+  W = f.w; H = f.h; CX = W/2; CY = H/2;
+  document.getElementById('format-badge').textContent = f.label;
+}
+function setBg(cls, ev) {
+  bgClass = cls;
+  document.getElementById('canvas-wrap').className = cls;
+  document.querySelectorAll('#bgBtns .pill').forEach(b => b.classList.remove('on'));
+  if (ev) ev.target.classList.add('on');
+}
+function setSt(s, skipTri) {
+  state = s;
+  const states = ['idle','thinking','speaking'];
+  states.forEach(st => {
+    document.querySelectorAll('#stateBtns .pill').forEach(b => {
+      if (b.textContent.toLowerCase() === st) b.classList.toggle('on', st === s);
+    });
+    const bb = document.getElementById('bb-'+st);
+    if (bb) bb.classList.toggle('on', st === s);
+  });
+  updateMorphNote();
+  // Triangle mode: trigger transition only when user initiates
+  if (triActive && !skipTri) triggerTriTransition(s);
+}
+function setColor(c) {
+  colorKey = c;
+  document.querySelectorAll('#colorSwatches .swatch').forEach(s => s.classList.toggle('on', s.dataset.c === c));
+}
+function updateMorphNote() {
+  const cur = state === 'idle' ? idleAnim : speakAnim;
+  const isMorph = cur === 'morph';
+  document.getElementById('morphNote').style.display = isMorph ? '' : 'none';
+  document.getElementById('nonMorphControls').style.display = isMorph ? 'none' : '';
+}
+function setIdleAnim(a) {
+  idleAnim = a;
+  document.querySelectorAll('#idleAnimBtns .pill').forEach(b => b.classList.toggle('on', b.textContent.toLowerCase() === animLabel(a)));
+  if (state === 'idle') updateMorphNote();
+}
+function setSpeakAnim(a) {
+  speakAnim = a;
+  document.querySelectorAll('#speakAnimBtns .pill').forEach(b => b.classList.toggle('on', b.textContent.toLowerCase() === animLabel(a)));
+  if (state !== 'idle') updateMorphNote();
+}
+const animLabels = {morph:'morph',fullfield:'field',organic:'organic',pulse:'pulse',spin:'spin',drift:'drift',wave:'wave',grid:'grid',web:'web',breathe:'breathe',vortex:'vortex',scatter:'scatter',ripple:'ripple',constellation:'constellation',flow:'flow'};
+function animLabel(a) { return animLabels[a] || a; }
+
+function toggleStabilize()   { stabilize    = !stabilize;    document.getElementById('stabilizeBtn')   .classList.toggle('on', stabilize); }
+function toggleStabilizePos() { stabilizePos = !stabilizePos; document.getElementById('stabilizePosBtn').classList.toggle('on', stabilizePos); }
+function toggleFixAxis()      { fixAxis      = !fixAxis;      document.getElementById('fixAxisBtn')     .classList.toggle('on', fixAxis); }
+function toggleFixSize()      { fixSize      = !fixSize;      document.getElementById('fixSizeBtn')     .classList.toggle('on', fixSize); }
+function toggleAxis()         { showAxis     = !showAxis;     document.getElementById('axisBtn')        .classList.toggle('on', showAxis); }
+
+function toggleLockIdle() {
+  idleLocked = !idleLocked;
+  const btn   = document.getElementById('lockIdleBtn');
+  const label = document.getElementById('lockIdleLabel');
+  if (idleLocked) {
+    lockedIdleSettings = captureSettings();
+    btn.classList.add('on');
+    label.textContent = 'locked';
+    label.style.color = '#6ab4ff';
+    // If on presets tab, re-render to show locked card
+    renderPresets();
+    renderPairs();
+  } else {
+    lockedIdleSettings = null;
+    btn.classList.remove('on');
+    label.textContent = 'unlocked';
+    label.style.color = '';
+    renderPresets();
+    renderPairs();
+  }
+}
+
+function slider(id, valId, transform, cb) {
+  const el = document.getElementById(id), vl = document.getElementById(valId);
+  el.addEventListener('input', () => {
+    const v = transform(parseFloat(el.value));
+    vl.textContent = v.display !== undefined ? v.display : v;
+    cb(v.raw !== undefined ? v.raw : v);
+  });
+}
+slider('opSlider',    'opVal',    v => ({ display: (v/100).toFixed(2), raw: v/100 }), v => opacity = v);
+slider('speedSlider', 'speedVal', v => ({ display: (v/10).toFixed(1)+'×', raw: v/10 }), v => speedMult = v);
+slider('ampSlider',   'ampVal',   v => v, v => movementAmp = v);
+slider('countSlider', 'countVal', v => v, v => starCount = v);
+slider('sizeSlider',  'sizeVal',  v => v, v => baseSize = v);
+slider('radiusSlider','radiusVal',v => v, v => orbitRadius = v);
+slider('innerSlider', 'innerVal', v => ({ display: (v/100).toFixed(2), raw: v/100 }), v => innerRatio = v);
+slider('glowSlider',  'glowVal',  v => v, v => glowRings = v);
+slider('gridRadiusSlider','gridRadiusVal', v => v, v => gridInfluenceRadius = v);
+slider('pulseSlider', 'pulseVal', v => ({ display: (v/10).toFixed(1), raw: v/10 }), v => pulseAmt = v);
+slider('spinSlider',  'spinVal',  v => ({ display: (v/10).toFixed(1), raw: v/10 }), v => spinAmt  = v);
+
+cv.addEventListener('mousemove', e => {
+  const rect = cv.getBoundingClientRect();
+  mouseX = (e.clientX - rect.left) * (W / rect.width);
+  mouseY = (e.clientY - rect.top)  * (H / rect.height);
+});
+cv.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+
+// ── Morph ──
+const idleRings = [
+  {count:12,r:22, sz:7.5,rotSpd:0.003},  {count:18,r:42, sz:6.0,rotSpd:-0.0025},
+  {count:24,r:60, sz:5.0,rotSpd:0.002},  {count:30,r:78, sz:4.0,rotSpd:-0.0018},
+  {count:36,r:95, sz:3.0,rotSpd:0.0015}, {count:48,r:112,sz:2.0,rotSpd:-0.001},
+];
+const speakRings = [
+  {count:12, r:10, sz:4.5,rotSpd:0.008},  {count:20, r:22, sz:4.0,rotSpd:-0.006},
+  {count:30, r:36, sz:3.5,rotSpd:0.005},  {count:40, r:50, sz:3.0,rotSpd:-0.0045},
+  {count:52, r:64, sz:2.6,rotSpd:0.004},  {count:60, r:78, sz:2.2,rotSpd:-0.0035},
+  {count:70, r:92, sz:1.9,rotSpd:0.003},  {count:80, r:106,sz:1.6,rotSpd:-0.0028},
+  {count:90, r:118,sz:1.3,rotSpd:0.0025}, {count:100,r:129,sz:1.1,rotSpd:-0.002},
+  {count:110,r:139,sz:0.9,rotSpd:0.0018}, {count:120,r:148,sz:0.7,rotSpd:-0.0015},
+];
+function getRingPair(i){const iR=idleRings[i];let best=0,bd=Infinity;speakRings.forEach((sR,si)=>{const d=Math.abs(iR.r-sR.r);if(d<bd){bd=d;best=si;}});return best;}
+const ringPairs=idleRings.map((_,i)=>getRingPair(i));
+function easeInOut(x){return x<0.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
+
+function drawMorph(eb) {
+  const p = palette[colorKey];
+  // Scale rings by orbitRadius (base=100) and baseSize (base=11)
+  const rScale = orbitRadius / 100;
+  const sScale = baseSize / 11;
+
+  idleRings.forEach((iRing,ri)=>{
+    const si=ringPairs[ri]; const sRing=speakRings[si];
+    const count=Math.round(iRing.count+(sRing.count-iRing.count)*eb);
+    const baseR=(iRing.r+(sRing.r-iRing.r)*eb)*rScale;
+    const szBase=(iRing.sz+(sRing.sz-iRing.sz)*eb)*sScale;
+    const rotSpd=iRing.rotSpd+(sRing.rotSpd-iRing.rotSpd)*eb;
+    const wobbleAmp=(2+eb*7)*(movementAmp/13); const wobbleFreq=0.5+ri*0.12+eb*(1.8+ri*0.2);
+    for(let j=0;j<count;j++){
+      const baseAngle=(j/count)*Math.PI*2;
+      const wobble=Math.sin(t*wobbleFreq+j*0.3+ri*1.1)*wobbleAmp+Math.cos(t*(wobbleFreq*0.55)+j*0.18+ri)*wobbleAmp*(0.2+eb*0.2);
+      const r=baseR+wobble; const angle=baseAngle+t*rotSpd;
+      const x=CX+Math.cos(angle)*r; const y=CY+Math.sin(angle)*r*0.97;
+      const fadeIdle=0.28-ri*0.03; const fadeSpeak=0.13-si*0.008;
+      const fadePulse=eb*Math.abs(Math.sin(t*3+j*0.25+ri*0.8))*0.1;
+      const fade=Math.max(fadeIdle+(fadeSpeak-fadeIdle)*eb+fadePulse,0.01);
+      const szRaw=szBase*(fixSize ? 1 : (1+Math.sin(t*(0.6+eb*2.5)+j*0.3+ri)*(0.05+eb*0.1)*pulseAmt));
+      const pSin = Math.sin(t*(0.6+eb*2.5)+j*0.3+ri);
+      const fadeP = fade * (fixSize ? 1 : (1 + pSin * 0.5 * pulseAmt));
+      drawStar(x,y,Math.max(szRaw,0.4),Math.max(szRaw*innerRatio,0.18),fixAxis?0:angle+t*0.1*(ri%2===0?1:-1)*(1+spinAmt),Math.min(0.95,fadeP),fadeP*0.38,0.2);
+    }
+  });
+  if(eb>0.01){
+    speakRings.slice(idleRings.length).forEach((sRing,extraI)=>{
+      const ri=idleRings.length+extraI;
+      const localBlend=Math.max(0,(eb-0.3-extraI*0.06)/0.7);
+      if(localBlend<0.005)return;
+      const eb2=easeInOut(Math.min(1,localBlend));
+      const wobbleAmp=(1.5+eb*7+extraI*0.3)*(movementAmp/13);
+      const wobbleFreq=0.7+ri*0.18+eb*(1.5+extraI*0.2);
+      for(let j=0;j<sRing.count;j++){
+        const baseAngle=(j/sRing.count)*Math.PI*2;
+        const wobble=Math.sin(t*wobbleFreq+j*0.3+ri*1.2)*wobbleAmp;
+        const r=sRing.r*rScale+wobble; const angle=baseAngle+t*sRing.rotSpd;
+        const x=CX+Math.cos(angle)*r; const y=CY+Math.sin(angle)*r*0.97;
+        const fade=Math.max((0.11-extraI*0.009)*eb2+Math.abs(Math.sin(t*3+j*0.25+ri*0.8))*0.07*eb2,0.01);
+        const szRaw=sRing.sz*sScale*(fixSize?1:(1+Math.sin(t*3+j*0.2+ri)*0.1*eb));
+        drawStar(x,y,Math.max(szRaw,0.4),Math.max(szRaw*innerRatio,0.18),fixAxis?0:angle+t*0.15*(ri%2===0?1:-1),fade,fade*0.35,0.18);
+      }
+    });
+  }
+}
+
+function starPos(i, r, n) {
+  const a = (i/n)*Math.PI*2 - Math.PI/2;
+  return { x: CX + Math.cos(a)*r, y: CY + Math.sin(a)*r };
+}
+
+function drawStar(x, y, ro, ri, rot, fillA, strokeA, sw) {
+  const pts = [];
+  for (let j = 0; j < 10; j++) {
+    const a = (j / 10) * Math.PI * 2 - Math.PI / 2 + rot;
+    const r = j % 2 === 0 ? ro : ri;
+    pts.push({ x: x + Math.cos(a) * r, y: y + Math.sin(a) * r, outer: j % 2 === 0 });
+  }
+
+  // Rounding amount – scales with star size, capped so it stays visible
+  const round = Math.min(ro * 0.28, ri * 0.5);
+
+  ct.beginPath();
+  for (let j = 0; j < 10; j++) {
+    const prev = pts[(j + 9) % 10];
+    const cur  = pts[j];
+    const next = pts[(j + 1) % 10];
+
+    if (cur.outer) {
+      // Outer tip – round it with a quadratic curve
+      // Entry point: slightly before tip along the incoming edge
+      const ex = cur.x + (prev.x - cur.x) * round / ro;
+      const ey = cur.y + (prev.y - cur.y) * round / ro;
+      // Exit point: slightly after tip along the outgoing edge
+      const fx = cur.x + (next.x - cur.x) * round / ro;
+      const fy = cur.y + (next.y - cur.y) * round / ro;
+      if (j === 0) ct.moveTo(ex, ey); else ct.lineTo(ex, ey);
+      ct.quadraticCurveTo(cur.x, cur.y, fx, fy);
+    } else {
+      // Inner valley – straight line
+      if (j === 0) ct.moveTo(cur.x, cur.y); else ct.lineTo(cur.x, cur.y);
+    }
+  }
+  ct.closePath();
+
+  const p = palette[colorKey];
+  if (fillA > 0)   { ct.fillStyle = `rgba(${p.r},${p.g},${p.b},${fillA * opacity / 0.45})`; ct.fill(); }
+  if (strokeA > 0) { const sr=Math.min(255,p.r+30),sg=Math.min(255,p.g+30),sb=Math.min(255,p.b+30); ct.strokeStyle=`rgba(${sr},${sg},${sb},${strokeA*opacity/0.45})`; ct.lineWidth=sw; ct.stroke(); }
+}
+
+let animStyleForGetParams = 'organic';
+
+function getStarParams(i, eb) {
+  const noise = noiseBase[i % noiseBase.length];
+  const spk = eb;
+  const base = starPos(i, orbitRadius, starCount);
+  const amp = movementAmp;
+  const style = animStyleForGetParams;
+  let x, y, rot, sz, fa;
+
+  if (style === 'organic') {
+    const ox = stabilizePos ? 0 : (Math.sin(t*noise.sp1+noise.ph1)*amp + Math.cos(t*noise.sp2*0.7+noise.ph2)*amp*0.45);
+    const oy = stabilizePos ? 0 : (Math.cos(t*noise.sp2+noise.ph2)*amp + Math.sin(t*noise.sp3*0.6+noise.ph1)*amp*0.45);
+    x = (base.x+ox)+(base.x-(base.x+ox))*spk;
+    y = (base.y+oy)+(base.y-(base.y+oy))*spk;
+    rot = stabilize ? noise.ph1 : (t*0.045+noise.ph1)*(1-spk)+(t*0.4+i*0.2)*spk;
+    const pWave = Math.sin(t*0.8+i*0.6);
+    const szO = fixSize ? baseSize : baseSize+pWave*1.8*pulseAmt;
+    const szP = fixSize ? baseSize*1.2 : baseSize*1.2*(1+Math.sin(t*6+i*0.52)*0.22*pulseAmt);
+    sz = szO+(szP-szO)*spk;
+    const baseA = (0.26+Math.sin(t*0.6+i*0.4)*0.09)*(1-spk)+(0.55+Math.abs(Math.sin(t*5+i))*0.35)*spk;
+    fa = baseA * (fixSize ? 1 : (1 + pWave * 0.45 * pulseAmt));
+  } else if (style === 'pulse') {
+    x = base.x; y = base.y;
+    rot = stabilize ? i*(Math.PI*2/starCount) : t*0.3*(1+spinAmt)+i*(Math.PI*2/starCount);
+    const pWave2 = Math.sin(t*4+i*(Math.PI*2/starCount));
+    sz = fixSize ? baseSize : baseSize*(1+pWave2*0.3*(0.5+spk*0.5)*pulseAmt);
+    fa = (0.3+Math.abs(Math.sin(t*3+i))*0.5) * (fixSize ? 1 : (1 + pWave2 * 0.5 * pulseAmt));
+  } else if (style === 'spin') {
+    const a2 = stabilizePos ? (i/starCount)*Math.PI*2-Math.PI/2 : (i/starCount)*Math.PI*2-Math.PI/2+t*(0.3+spk*0.7);
+    x = CX+Math.cos(a2)*orbitRadius; y = CY+Math.sin(a2)*orbitRadius;
+    rot = stabilize ? i*0.5 : t*1.2*(1+spinAmt)+i*0.5;
+    const pWave3 = Math.sin(t*2+i);
+    sz = fixSize ? baseSize : baseSize+pWave3*2*pulseAmt;
+    fa = (0.35+spk*0.3) * (fixSize ? 1 : (1 + pWave3 * 0.5 * pulseAmt));
+  } else if (style === 'drift') {
+    const ox2 = stabilizePos ? 0 : Math.sin(t*noise.sp1*0.5+noise.ph1)*(amp+spk*8);
+    const oy2 = stabilizePos ? 0 : Math.cos(t*noise.sp2*0.5+noise.ph2)*(amp+spk*8);
+    x = base.x+ox2; y = base.y+oy2;
+    rot = stabilize ? noise.ph1 : t*0.06+noise.ph1;
+    const pWave4 = Math.sin(t*0.3+i);
+    sz = fixSize ? baseSize : baseSize+pWave4*3*pulseAmt;
+    fa = (0.2+Math.sin(t*0.4+i*0.5)*0.1+spk*0.25) * (fixSize ? 1 : (1 + pWave4 * 0.4 * pulseAmt));
+  } else { // wave
+    const wave = Math.sin(t*1.5+i*(Math.PI*2/starCount)*2)*amp;
+    x = base.x+Math.cos((i/starCount)*Math.PI*2)*wave*0.3;
+    y = base.y+Math.sin(t*2+i*0.5)*wave;
+    rot = t*0.2+i*0.3+spk*t*0.5;
+    const pWave5 = Math.sin(t*3+i);
+    sz = fixSize ? baseSize : baseSize*(0.8+pWave5*0.4*pulseAmt);
+    fa = (0.25+Math.abs(Math.sin(t*2.5+i))*0.5) * (fixSize ? 1 : (1 + pWave5 * 0.45 * pulseAmt));
+  }
+  return { x, y, rot: fixAxis ? 0 : rot, sz, fa };
+}
+
+// ── Full Field ──
+function drawFullField(eb) {
+  const p = palette[colorKey];
+  const grid = Math.max(16, 32 - baseSize * 0.4); // grid tighter with bigger stars
+  const cols = Math.ceil(W/grid)+2, rows = Math.ceil(H/grid)+2;
+  const fieldR = orbitRadius * 1.4; // field radius from center
+  for (let row=0;row<rows;row++) {
+    for (let col=0;col<cols;col++) {
+      const gx=(col-0.5)*grid, gy=(row-0.5)*grid;
+      const dx=(gx-CX)/(fieldR*0.5), dy=(gy-CY)/(fieldR*0.5);
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const idleSz=Math.max(0.4,(1.2-dist*0.3)*baseSize*0.22);
+      const ripple=Math.sin(dist*9-t*5)*0.5+0.5;
+      const proximity=Math.max(0,1.0-dist*0.85);
+      const speakSz=(proximity*3.5+ripple*proximity*2.5)*baseSize*0.7;
+      const sz=idleSz+(fixSize?0:speakSz)*eb;
+      if(sz<0.2)continue;
+      const idleA=0.12+Math.sin(t*0.3+col*0.4+row*0.3)*0.04;
+      const speakA=proximity*0.65+ripple*proximity*0.4;
+      const fa=Math.min(0.95,idleA+speakA*eb);
+      const seed=col*31+row*97;
+      const amp=movementAmp*0.2;
+      const ox=Math.sin(t*0.5+seed*0.08)*amp, oy=Math.cos(t*0.45+seed*0.13)*amp;
+      const angle=Math.atan2(gy-CY,gx-CX);
+      const idleRot=t*0.04+seed*0.5, speakRot=angle+t*(0.4+proximity*2.0);
+      const rot=fixAxis ? 0 : (idleRot+(speakRot-idleRot)*eb);
+      const strokeA = (eb>0.05&&proximity>0.3) ? fa*0.4*eb : 0;
+      drawStar(gx+ox, gy+oy, sz, Math.max(sz*innerRatio,0.15), rot, fa, strokeA, 0.5);
+    }
+  }
+  if(eb>0.01){for(let g=5;g>=1;g--){const r=g*orbitRadius*0.22+Math.sin(t*3-g)*6;ct.beginPath();ct.arc(CX,CY,r,0,Math.PI*2);const ga=eb*(0.18/g)*(0.5+Math.abs(Math.sin(t*4-g*0.8))*0.5);ct.strokeStyle=`rgba(${palette[colorKey].r},${palette[colorKey].g},${palette[colorKey].b},${ga})`;ct.lineWidth=14/g;ct.stroke();}}
+}
+
+// ── Grid ──
+function drawGrid(eb) {
+  const p=palette[colorKey]; const grid=32;
+  const cols=Math.ceil(W/grid)+1, rows=Math.ceil(H/grid)+1;
+  const maxInfluence=gridInfluenceRadius;
+  for(let row=0;row<rows;row++){for(let col=0;col<cols;col++){
+    const gx=col*grid, gy=row*grid;
+    const dxM=gx-mouseX, dyM=gy-mouseY, distM=Math.sqrt(dxM*dxM+dyM*dyM);
+    const mouseFactor=mouseX>-999?Math.max(0,1-distM/maxInfluence):0;
+    const mouseEase=mouseFactor*mouseFactor*(3-2*mouseFactor);
+    const idleSz=baseSize*0.18, hoverSz=baseSize*1.4;
+    const sz=idleSz+(hoverSz-idleSz)*mouseEase+(fixSize?0:eb*baseSize*0.5);
+    if(sz<0.3)continue;
+    const idleA=0.10+Math.sin(t*0.25+col*0.5+row*0.37)*0.03;
+    const hoverA=0.7*mouseEase, speakA=0.3*eb;
+    const fa=Math.min(0.9,idleA+hoverA+speakA);
+    const seed=col*31+row*97;
+    const idleRot=stabilize?seed*0.5:(t*0.03+seed*0.5);
+    const mouseAngle=Math.atan2(dyM,dxM)+Math.PI;
+    const rot=fixAxis?0:(idleRot+(mouseAngle-idleRot)*mouseEase*0.7);
+    const strokeA2 = mouseEase>0.1 ? mouseEase*0.5 : 0;
+    drawStar(gx, gy, sz, Math.max(sz*innerRatio,0.15), rot, fa, strokeA2, 0.8);
+  }}
+}
+
+// ── Axis ──
+function drawAxis() {
+  const p=palette[colorKey]; const axisA=0.25,tickLen=4,tickStep=40;
+  ct.save(); ct.strokeStyle=`rgba(${p.r},${p.g},${p.b},${axisA})`; ct.lineWidth=0.5; ct.setLineDash([4,6]);
+  ct.beginPath();ct.moveTo(0,CY);ct.lineTo(W,CY);ct.stroke();
+  ct.beginPath();ct.moveTo(CX,0);ct.lineTo(CX,H);ct.stroke();
+  ct.setLineDash([]);ct.lineWidth=0.5;ct.fillStyle=`rgba(${p.r},${p.g},${p.b},${axisA*0.7})`;
+  ct.font=`9px 'DM Mono',monospace`;ct.textAlign='center';ct.textBaseline='top';
+  for(let x=CX+tickStep;x<W;x+=tickStep){ct.beginPath();ct.moveTo(x,CY-tickLen);ct.lineTo(x,CY+tickLen);ct.stroke();ct.fillText(`+${Math.round(x-CX)}`,x,CY+tickLen+2);}
+  for(let x=CX-tickStep;x>0;x-=tickStep){ct.beginPath();ct.moveTo(x,CY-tickLen);ct.lineTo(x,CY+tickLen);ct.stroke();ct.fillText(`${Math.round(x-CX)}`,x,CY+tickLen+2);}
+  ct.textAlign='left';
+  for(let y=CY+tickStep;y<H;y+=tickStep){ct.beginPath();ct.moveTo(CX-tickLen,y);ct.lineTo(CX+tickLen,y);ct.stroke();ct.fillText(`-${Math.round(y-CY)}`,CX+tickLen+2,y-5);}
+  for(let y=CY-tickStep;y>0;y-=tickStep){ct.beginPath();ct.moveTo(CX-tickLen,y);ct.lineTo(CX+tickLen,y);ct.stroke();ct.fillText(`+${Math.round(CY-y)}`,CX+tickLen+2,y-5);}
+  ct.fillText('0',CX+4,CY+4); ct.restore();
+}
+
+// ── Triangle blend state ──
+let triFrom = null;
+let triTo   = null;
+let triBlend = 1.0;
+let triState = 'idle';
+let triFromState = 'idle'; // track which state triFrom belongs to
+
+function getPresetForState(s) {
+  if (s === 'idle')     return triIdleSettings;
+  if (s === 'thinking') return triThinkSettings;
+  if (s === 'speaking') return triSpeakSettings;
+  return null;
+}
+
+function triggerTriTransition(newState) {
+  const target = getPresetForState(newState);
+  if (!target) return;
+  if (triBlend < 0.999 && triFrom && triTo) {
+    // Mid-transition: snapshot current mix as from
+    triFrom = lerpSettings(triFrom, triTo, triBlend);
+    triFromState = triState; // approximate
+  } else {
+    triFrom = getPresetForState(triState) || triTo || target;
+    triFromState = triState;
+  }
+  triTo    = target;
+  triBlend = 0;
+  triState = newState;
+}
+
+function lerpSettings(a, b, t) {
+  if (!a || !b) return b || a;
+  const keys = ['starCount','baseSize','orbitRadius','innerRatio','opacity','movementAmp','glowRings','speedMult'];
+  const out = {...b};
+  keys.forEach(k => { out[k] = (a[k]??b[k]) + ((b[k]??a[k]) - (a[k]??b[k])) * t; });
+  out.starCount = Math.round(out.starCount);
+  out.glowRings = Math.round(out.glowRings);
+  out.colorKey  = t < 0.5 ? (a.colorKey||'gray') : (b.colorKey||'gray');
+  out.idleAnim  = a.idleAnim  || b.idleAnim;
+  out.speakAnim = b.speakAnim || a.speakAnim;
+  return out;
+}
+
+function applySettingsToGlobals(s) {
+  if (!s) return;
+  starCount   = s.starCount   ?? 12;
+  baseSize    = s.baseSize    ?? 11;
+  orbitRadius = s.orbitRadius ?? 88;
+  innerRatio  = s.innerRatio  ?? 0.42;
+  opacity     = s.opacity     ?? 0.45;
+  movementAmp = s.movementAmp ?? 13;
+  glowRings   = s.glowRings   ?? 4;
+  speedMult   = s.speedMult   ?? 1;
+  colorKey    = s.colorKey    || 'gray';
+}
+
+function getAnimForSettings(s, role) {
+  if (!s) return 'spin';
+  // role: which state this settings belongs to
+  if (role === 'idle') return s.idleAnim || 'spin';
+  return s.speakAnim || s.idleAnim || 'morph';
+}
+
+function loop() {
+  ct.clearRect(0,0,W,H);
+
+  t += 0.016 * (speedMult || 1);
+
+  if (triActive && triFrom && triTo) {
+    if (triBlend < 0.999) triBlend = Math.min(1, triBlend + 0.018);
+    const pb = easeInOut(triBlend);
+
+    // Determine correct animation for each layer
+    const fromAnim = getAnimForSettings(triFrom, triFromState);
+    const toAnim   = getAnimForSettings(triTo,   triState);
+
+    if (pb < 0.99) {
+      applySettingsToGlobals(triFrom);
+      ct.save(); ct.globalAlpha = 1 - pb;
+      drawAnimStyle(fromAnim, 0);
+      ct.restore();
+    }
+
+    if (pb > 0.01) {
+      applySettingsToGlobals(triTo);
+      ct.save(); ct.globalAlpha = pb;
+      drawAnimStyle(toAnim, 0);
+      ct.restore();
+    }
+
+    applySettingsToGlobals(triTo);
+
+  } else {
+    // Normal mode
+    const active = state !== 'idle';
+    blend += ((active ? 1 : 0) - blend) * (active ? 0.045 : 0.016);
+    const eb = easeInOut(Math.max(0, Math.min(1, blend)));
+    t += 0.016 * speedMult * eb * 0.2;
+    if (idleAnim === speakAnim) {
+      drawAnimStyle(idleAnim, eb);
+    } else {
+      if (eb < 0.99) { ct.save(); ct.globalAlpha = 1 - eb; drawAnimStyle(idleAnim, 0); ct.restore(); }
+      if (eb > 0.01) { ct.save(); ct.globalAlpha = eb;     drawAnimStyle(speakAnim, 1); ct.restore(); }
+    }
+  }
+
+  if (showAxis) drawAxis();
+  requestAnimationFrame(loop);
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function drawAnimStyle(style,eb) {
+  if(style==='morph'){drawMorph(eb);}
+  else if(style==='fullfield'){drawFullField(eb);}
+  else if(style==='grid'){drawGrid(eb);}
+  else if(style==='web'){drawWeb(eb);}
+  else if(style==='breathe'){drawBreathe(eb);}
+  else if(style==='vortex'){drawVortex(eb);}
+  else if(style==='scatter'){drawScatter(eb);}
+  else if(style==='ripple'){drawRipple(eb);}
+  else if(style==='constellation'){drawConstellation(eb);}
+  else if(style==='flow'){drawFlow(eb);}
+  else {
+    const p=palette[colorKey];
+    if(glowRings>0&&eb>0.01){for(let g=glowRings;g>=1;g--){ct.beginPath();ct.arc(CX,CY,orbitRadius+g*10,0,Math.PI*2);const ga=eb*(0.07+Math.abs(Math.sin(t*4))*0.05)/g;ct.strokeStyle=`rgba(${p.r},${p.g},${p.b},${ga})`;ct.lineWidth=8+g*2;ct.stroke();}}
+    const saved=animStyleForGetParams; animStyleForGetParams=style;
+    for(let i=0;i<starCount;i++){const{x,y,rot,sz,fa}=getStarParams(i,eb);drawStar(x,y,sz,sz*innerRatio,rot,fa,0.35+eb*0.25,0.9);}
+    animStyleForGetParams=saved;
+  }
+}
+
+// ── Breathe: concentrics expanding/contracting ──
+function drawBreathe(eb) {
+  const p = palette[colorKey];
+  const rings = 5 + Math.round(eb * 4);
+  const amp = movementAmp * 0.8;
+  for (let ri = 0; ri < rings; ri++) {
+    const phase = (ri / rings) * Math.PI * 2;
+    const breathe = Math.sin(t * 1.2 + phase) * amp;
+    const r = orbitRadius * (0.15 + ri * 0.18) + breathe;
+    const count = 6 + ri * (3 + Math.round(eb * 3));
+    const pWave = Math.sin(t * 2 + phase);
+    const sz = Math.max(0.5, baseSize * (0.9 - ri * 0.1) * (fixSize ? 1 : (1 + pWave * 0.2 * pulseAmt)));
+    const fa = Math.max(0.04, (0.35 - ri * 0.05 + eb * 0.15) * (fixSize ? 1 : (1 + pWave * 0.55 * pulseAmt)));
+    for (let j = 0; j < count; j++) {
+      const angle = (j / count) * Math.PI * 2 + t * (ri % 2 === 0 ? 0.2 : -0.15) * (1 + eb);
+      const x = CX + Math.cos(angle) * r;
+      const y = CY + Math.sin(angle) * r * 0.97;
+      const rot = fixAxis ? 0 : angle + t * 0.3 * (ri % 2 === 0 ? 1 : -1);
+      drawStar(x, y, sz, sz * innerRatio, rot, fa, fa * 0.3, 0.4);
+    }
+  }
+  // Center pulse
+  if (!fixSize) {
+    const cSz = baseSize * (1.5 + Math.sin(t * 2) * 0.4 + eb * 1.2);
+    drawStar(CX, CY, cSz, cSz * innerRatio, fixAxis ? 0 : t * 0.5, 0.6 + eb * 0.3, 0.3, 0.8);
+  }
+}
+
+// ── Vortex: stars spiral inward/outward ──
+function drawVortex(eb) {
+  const p = palette[colorKey];
+  const n = starCount * 3;
+  const arms = 3 + Math.round(eb * 2);
+  for (let i = 0; i < n; i++) {
+    const arm = i % arms;
+    const idx = Math.floor(i / arms);
+    const frac = idx / Math.ceil(n / arms);
+    const r = orbitRadius * 0.05 + frac * orbitRadius * (0.9 + eb * 0.5);
+    const spin = t * (1.5 - frac * 1.2) * (1 + eb * 0.8);
+    const angle = (arm / arms) * Math.PI * 2 + frac * Math.PI * (2.5 + eb * 1.5) + spin;
+    const wobble = stabilizePos ? 0 : Math.sin(t * 2 + i * 0.4) * movementAmp * 0.3;
+    const x = CX + Math.cos(angle) * (r + wobble);
+    const y = CY + Math.sin(angle) * (r + wobble) * 0.97;
+    const sz = fixSize ? baseSize * (1 - frac * 0.5) : baseSize * (1.2 - frac * 0.7) * (1 + Math.sin(t * 3 + i * 0.5) * 0.15);
+    const fa = Math.max(0.05, 0.5 - frac * 0.35 + eb * 0.2);
+    const rot = fixAxis ? 0 : angle + t * 0.8;
+    if (sz > 0.3) drawStar(x, y, Math.max(sz, 0.3), Math.max(sz * innerRatio, 0.15), rot, fa, fa * 0.35, 0.5);
+  }
+}
+
+// ── Scatter: explode out then drift back ──
+function drawScatter(eb) {
+  const p = palette[colorKey];
+  for (let i = 0; i < starCount; i++) {
+    const noise = noiseBase[i % noiseBase.length];
+    const seed = i * 137.508;
+    const scatterAngle = seed;
+    const scatterR = orbitRadius * (0.3 + (i / starCount) * 1.4);
+    const pullBack = Math.sin(t * 0.8 + i * 0.4) * 0.5 + 0.5; // 0-1 oscillation
+    const baseR = orbitRadius * 0.15;
+    const r = baseR + (scatterR - baseR) * pullBack * (1 + eb * 0.6);
+    const drift = stabilizePos ? 0 : Math.sin(t * noise.sp1 + noise.ph1) * movementAmp * 0.4;
+    const angle = scatterAngle + t * (0.05 + (i / starCount) * 0.15) * (i % 2 === 0 ? 1 : -1);
+    const x = CX + Math.cos(angle) * (r + drift);
+    const y = CY + Math.sin(angle) * (r + drift) * 0.97;
+    const sz = fixSize ? baseSize : baseSize * (0.6 + pullBack * 0.8) * (1 + eb * 0.5);
+    const fa = 0.15 + pullBack * 0.4 + eb * 0.2;
+    const rot = fixAxis ? 0 : t * 0.3 + i * 0.7;
+    if (sz > 0.3) drawStar(x, y, Math.max(sz, 0.3), Math.max(sz * innerRatio, 0.15), rot, fa, fa * 0.3, 0.6);
+  }
+}
+
+// ── Ripple: water surface waves ──
+function drawRipple(eb) {
+  const p = palette[colorKey];
+  const rows = Math.ceil(H / (baseSize * 2.2)) + 1;
+  const cols = Math.ceil(W / (baseSize * 2.2)) + 1;
+  const cellW = W / (cols - 1), cellH = H / (rows - 1);
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const bx = col * cellW, by = row * cellH;
+      const dx = (bx - CX) / orbitRadius, dy = (by - CY) / orbitRadius;
+      const distN = Math.sqrt(dx * dx + dy * dy);
+      // Multiple ripple sources
+      const wave1 = Math.sin(distN * 5 - t * 3) * 0.5 + 0.5;
+      const wave2 = Math.sin(distN * 8 - t * 4.5 + Math.PI) * 0.5 + 0.5;
+      const wave = (wave1 + wave2 * eb) / (1 + eb);
+      const amp = movementAmp * 0.3;
+      const x = bx + Math.cos(Math.atan2(by - CY, bx - CX) + Math.PI / 2) * wave * amp;
+      const y = by + Math.sin(Math.atan2(by - CY, bx - CX) + Math.PI / 2) * wave * amp;
+      const sz = fixSize ? baseSize * 0.5 : baseSize * 0.5 * (0.5 + wave * 0.9) * (1 + eb * 0.6);
+      if (sz < 0.3) continue;
+      const fa = 0.08 + wave * 0.35 + eb * 0.15;
+      const rot = fixAxis ? 0 : Math.atan2(y - CY, x - CX) + t * 0.2;
+      drawStar(x, y, sz, sz * innerRatio, rot, fa, fa * 0.25, 0.3);
+    }
+  }
+}
+
+// ── Constellation: random nodes with connecting lines ──
+function drawConstellation(eb) {
+  const p = palette[colorKey];
+  const n = starCount;
+  // Generate stable positions using noise seeds
+  const nodes = Array.from({length: n}, (_, i) => {
+    const noise = noiseBase[i % noiseBase.length];
+    const r = orbitRadius * (0.1 + (i / n) * 0.9);
+    const baseAngle = (i / n) * Math.PI * 2;
+    const drift = stabilizePos ? 0 : movementAmp * 0.5;
+    const ox = Math.sin(t * noise.sp1 * 0.3 + noise.ph1) * drift;
+    const oy = Math.cos(t * noise.sp2 * 0.3 + noise.ph2) * drift;
+    const angle = baseAngle + t * 0.04 * (i % 2 === 0 ? 1 : -1);
+    return {
+      x: CX + Math.cos(angle) * r + ox,
+      y: CY + Math.sin(angle) * r * 0.97 + oy,
+    };
+  });
+
+  // Draw connecting lines (each node connects to 2-3 neighbors)
+  const maxDist = orbitRadius * (0.6 + eb * 0.5);
+  nodes.forEach((a, i) => {
+    nodes.forEach((b, j) => {
+      if (j <= i) return;
+      const d = Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2);
+      if (d > maxDist) return;
+      const lineA = (1 - d / maxDist) * (0.12 + eb * 0.08);
+      ct.beginPath(); ct.moveTo(a.x, a.y); ct.lineTo(b.x, b.y);
+      ct.strokeStyle = `rgba(${p.r},${p.g},${p.b},${lineA * opacity / 0.45})`;
+      ct.lineWidth = 0.5 + (1 - d / maxDist) * 0.5;
+      ct.stroke();
+    });
+  });
+
+  // Draw nodes
+  nodes.forEach((node, i) => {
+    const sz = fixSize ? baseSize : baseSize * (0.7 + Math.sin(t * 1.5 + i * 0.8) * 0.3 * (1 + eb));
+    const fa = 0.4 + Math.sin(t * 2 + i * 0.5) * 0.2 + eb * 0.2;
+    const rot = fixAxis ? 0 : t * 0.15 + i * (Math.PI * 2 / n);
+    drawStar(node.x, node.y, Math.max(sz, 0.4), sz * innerRatio, rot, fa, fa * 0.4, 0.7);
+  });
+}
+
+// ── Flow: river-like streams ──
+function drawFlow(eb) {
+  const p = palette[colorKey];
+  const streams = Math.max(2, Math.round(starCount / 3));
+  const particlesPerStream = Math.max(3, Math.round(starCount * 1.5 / streams));
+
+  for (let s = 0; s < streams; s++) {
+    const streamPhase = (s / streams) * Math.PI * 2;
+    const streamR = orbitRadius * (0.3 + s / streams * 0.7);
+    const streamSpeed = 0.4 + s * 0.15 + eb * 0.6;
+
+    for (let pi = 0; pi < particlesPerStream; pi++) {
+      const frac = pi / particlesPerStream;
+      const angle = streamPhase + frac * Math.PI * 2 + t * streamSpeed;
+      const wobbleR = stabilizePos ? 0 : Math.sin(t * 1.5 + frac * 8 + s * 2) * movementAmp * 0.4;
+      const wobbleA = stabilizePos ? 0 : Math.cos(t * 2 + frac * 5 + s) * 0.15;
+      const r = streamR + wobbleR;
+      const x = CX + Math.cos(angle + wobbleA) * r;
+      const y = CY + Math.sin(angle + wobbleA) * r * 0.97;
+      const trail = (1 - frac) * 0.7 + frac * 0.3; // head brighter than tail
+      const sz = fixSize ? baseSize * trail : baseSize * trail * (0.8 + Math.sin(t * 3 + frac * 6) * 0.2) * (1 + eb * 0.4);
+      const fa = trail * (0.2 + eb * 0.25);
+      const rot = fixAxis ? 0 : angle + Math.PI / 2;
+      if (sz > 0.3) drawStar(x, y, Math.max(sz, 0.3), Math.max(sz * innerRatio, 0.15), rot, fa, fa * 0.3, 0.4);
+    }
+  }
+  // Speaking: add a bright burst at stream heads
+  if (eb > 0.01) {
+    for (let s = 0; s < streams; s++) {
+      const streamPhase = (s / streams) * Math.PI * 2;
+      const streamR = orbitRadius * (0.3 + s / streams * 0.7);
+      const angle = streamPhase + t * (0.4 + s * 0.15 + eb * 0.6);
+      const x = CX + Math.cos(angle) * streamR;
+      const y = CY + Math.sin(angle) * streamR * 0.97;
+      const sz = baseSize * (1.2 + eb * 0.6 + Math.sin(t * 4 + s) * 0.2);
+      drawStar(x, y, sz, sz * innerRatio, fixAxis ? 0 : angle, eb * 0.7, eb * 0.3, 0.8);
+    }
+  }
+}
+
+// ── Web / Fonal animáció ──
+function drawWeb(eb) {
+  const p = palette[colorKey];
+  const rScale = orbitRadius / 100;
+  const sScale = baseSize / 11;
+
+  // Global rotation: entire web spins as one (driven by spinAmt)
+  const globalRot = stabilize ? 0 : t * spinAmt * 0.25;
+
+  // Collect node positions – scaled by orbitRadius and baseSize
+  const allNodes = [];
+  idleRings.forEach((iRing, ri) => {
+    const si     = ringPairs[ri];
+    const sRing  = speakRings[si];
+    const count  = Math.round(iRing.count  + (sRing.count  - iRing.count)  * eb);
+    const baseR  = (iRing.r     + (sRing.r     - iRing.r)     * eb) * rScale;
+    // Local per-ring rotation (gentle, alternating) + global spin
+    const localRotSpd = iRing.rotSpd + (sRing.rotSpd - iRing.rotSpd) * eb;
+    const wobbleAmp  = (1.5 + eb * 5) * (movementAmp / 13);
+    const wobbleFreq = 0.4 + ri * 0.1 + eb * 1.2;
+    const szBase = (iRing.sz + (sRing.sz - iRing.sz) * eb) * sScale;
+
+    const ringNodes = [];
+    for (let j = 0; j < count; j++) {
+      const baseAngle = (j / count) * Math.PI * 2;
+      const wobble = Math.sin(t * wobbleFreq + j * 0.3 + ri * 1.1) * wobbleAmp
+                   + Math.cos(t * wobbleFreq * 0.6 + j * 0.2 + ri) * wobbleAmp * 0.3;
+      const r = baseR + (stabilizePos ? 0 : wobble);
+      // angle = per-node base + slow local ring drift + global web spin
+      const angle = baseAngle + t * localRotSpd + globalRot;
+      ringNodes.push({
+        x: CX + Math.cos(angle) * r,
+        y: CY + Math.sin(angle) * r * 0.97,
+        ri, j, count, szBase,
+        rot: fixAxis ? 0 : (angle + t * 0.04 * (ri % 2 === 0 ? 1 : -1)),
+      });
+    }
+    allNodes.push(ringNodes);
+  });
+
+  // 1. Ring strands – bezier along each ring
+  allNodes.forEach((ringNodes, ri) => {
+    const n = ringNodes.length;
+    const ringPulse = fixSize ? 1 : (1 + Math.sin(t * 0.8 + ri * 1.3) * 0.35 * pulseAmt);
+    const ringAlpha = Math.max(0.03, (0.18 - ri * 0.02 + eb * 0.04) * ringPulse);
+    ct.strokeStyle = `rgba(${p.r},${p.g},${p.b},${ringAlpha * opacity / 0.45})`;
+    ct.lineWidth   = Math.max(0.15, (1.2 - ri * 0.08) * sScale * ringPulse);
+    ct.beginPath();
+    for (let j = 0; j < n; j++) {
+      const a = ringNodes[j];
+      const b = ringNodes[(j + 1) % n];
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      // Pull slightly toward center for inward curve
+      const pull = 0.06 + (movementAmp / 13) * 0.04;
+      const cx_ = mx + (CX - mx) * pull;
+      const cy_ = my + (CY - my) * pull;
+      if (j === 0) ct.moveTo(a.x, a.y);
+      ct.quadraticCurveTo(cx_, cy_, b.x, b.y);
+    }
+    ct.stroke();
+  });
+
+  // 2. Radial strands between rings – density follows movementAmp
+  const radialDensity = Math.max(1, Math.round(8 * (movementAmp / 13)));
+  for (let ri = 0; ri < allNodes.length - 1; ri++) {
+    const inner = allNodes[ri];
+    const outer = allNodes[ri + 1];
+    const step  = Math.max(1, Math.round(inner.length / radialDensity));
+    const radialAlpha = Math.max(0.02, 0.10 - ri * 0.015 + eb * 0.03);
+    ct.strokeStyle = `rgba(${p.r},${p.g},${p.b},${radialAlpha * opacity / 0.45})`;
+    ct.lineWidth   = Math.max(0.15, (0.8 - ri * 0.08) * sScale);
+    for (let j = 0; j < inner.length; j += step) {
+      const a = inner[j];
+      const angle  = Math.atan2(a.y - CY, a.x - CX);
+      const outerJ = Math.round((angle / (Math.PI * 2) + 1) * outer.length) % outer.length;
+      const b = outer[outerJ];
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      const dist = Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2) || 1;
+      const bow  = dist * 0.08 * (movementAmp / 13);
+      const perpX = -(b.y - a.y) / dist * bow;
+      const perpY =  (b.x - a.x) / dist * bow;
+      ct.beginPath();
+      ct.moveTo(a.x, a.y);
+      ct.quadraticCurveTo(mx + perpX, my + perpY, b.x, b.y);
+      ct.stroke();
+    }
+  }
+
+  // 3. Nodes – sized by baseSize/innerRatio, pulsed unless fixSize
+  allNodes.forEach(ringNodes => {
+    ringNodes.forEach(node => {
+      const pSin   = Math.sin(t * 1.2 + node.j * 0.4 + node.ri);
+      const pulse  = fixSize ? 1 : (1 + pSin * 0.2 * pulseAmt);
+      const nodeSz = Math.max(0.4, node.szBase * 0.75 * pulse);
+      const nodeA  = Math.max(0.04, (0.30 - node.ri * 0.03) * (fixSize ? 1 : (1 + pSin * 0.6 * pulseAmt)));
+      drawStar(node.x, node.y, nodeSz, nodeSz * innerRatio, node.rot, nodeA, nodeA * 0.4, 0.3);
+    });
+  });
+
+  // 4. Speaking: pulsing center glow – scaled by orbitRadius
+  if (eb > 0.01) {
+    for (let g = 4; g >= 1; g--) {
+      const r = g * orbitRadius * 0.18 + Math.sin(t * 3 - g) * orbitRadius * 0.05;
+      ct.beginPath(); ct.arc(CX, CY, r, 0, Math.PI * 2);
+      ct.strokeStyle = `rgba(${p.r},${p.g},${p.b},${eb * 0.15 / g})`;
+      ct.lineWidth   = (10 / g) * sScale;
+      ct.stroke();
+    }
+  }
+}
+
+// ── Export ──
+function exportPNG() {
+  const a=document.createElement('a');
+  a.download=`star-field-${fmt}-${colorKey}.png`;
+  a.href=cv.toDataURL('image/png');
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+let recDuration=5;
+document.getElementById('durSlider').addEventListener('input',e=>{recDuration=parseInt(e.target.value);document.getElementById('durVal').textContent=recDuration+'s';});
+
+function exportMP4() {
+  if(!window.MediaRecorder){alert('MediaRecorder not supported.');return;}
+  if(typeof cv.captureStream!=='function'){alert('captureStream not available.');return;}
+  const mimeType=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'].find(m=>MediaRecorder.isTypeSupported(m))||'video/webm';
+  const btn=document.getElementById('mp4Btn'),prog=document.getElementById('rec-progress'),bar=document.getElementById('rec-bar'),lbl=document.getElementById('rec-label');
+  btn.textContent='● Recording...'; btn.style.pointerEvents='none'; prog.style.display='';
+  const chunks=[]; let stream;
+  try{stream=cv.captureStream(30);}catch(e){alert('captureStream hiba: '+e.message);btn.textContent='↓ Export MP4';btn.style.pointerEvents='';prog.style.display='none';return;}
+  const rec=new MediaRecorder(stream,{mimeType,videoBitsPerSecond:8_000_000});
+  rec.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+  rec.onerror=e=>{alert('Recording error');btn.textContent='↓ Export MP4';btn.style.pointerEvents='';prog.style.display='none';};
+  rec.onstop=()=>{
+    if(chunks.length===0){alert('Recording failed.');btn.textContent='↓ Export MP4';btn.style.pointerEvents='';prog.style.display='none';return;}
+    const ext=mimeType.includes('mp4')?'mp4':'webm';
+    const blob=new Blob(chunks,{type:mimeType}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`star-field-${fmt}-${colorKey}-${recDuration}s.${ext}`; a.style.display='none';
+    document.body.appendChild(a); a.click(); setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
+    btn.textContent='↓ Export MP4'; btn.style.pointerEvents=''; prog.style.display='none'; bar.style.width='0%';
+  };
+  rec.start(200);
+  const startMs=performance.now(), totalMs=recDuration*1000;
+  function tick(){const el=performance.now()-startMs;const pct=Math.min(100,(el/totalMs)*100);bar.style.width=pct.toFixed(1)+'%';lbl.textContent=Math.round(pct)+'%';if(el<totalMs)requestAnimationFrame(tick);else rec.stop();}
+  requestAnimationFrame(tick);
+}
+
+// ── Tab switching ──
+function switchTab(tab) {
+  const isEditor = tab === 'editor';
+  document.getElementById('tab-editor').style.display  = isEditor ? 'flex' : 'none';
+  document.getElementById('tab-presets').style.display = isEditor ? 'none' : 'flex';
+  document.querySelectorAll('.stab').forEach(b => b.classList.toggle('on', b.textContent.toLowerCase() === tab));
+  if (!isEditor) { renderPresets(); renderPairs(); }
+}
+
+// ── Presets ──
+let presets = [], activePresetId = null;
+const aLabelShort = {morph:'morph',fullfield:'field',organic:'org',pulse:'pulse',spin:'spin',drift:'drift',wave:'wave',grid:'grid',web:'web',breathe:'breathe',vortex:'vortex',scatter:'scatter',ripple:'ripple',constellation:'const',flow:'flow'};
+
+function captureSettings() {
+  return { fmt, bgClass, colorKey, idleAnim, speakAnim, opacity, speedMult, movementAmp,
+    starCount, baseSize, orbitRadius, innerRatio, glowRings, gridInfluenceRadius,
+    stabilize, stabilizePos, fixAxis, fixSize, showAxis, pulseAmt, spinAmt };
+}
+
+function applySettings(s) {
+  fmt = s.fmt||'sq';
+  applyFmt();
+  document.querySelectorAll('#fmtBtns .pill').forEach(b=>{
+    const m={'1:1':'sq','16:9':'wide','9:16':'tall','3:1':'wide3'};
+    b.classList.toggle('on', m[b.textContent.trim()]===fmt);
+  });
+  bgClass = s.bgClass||'bg-dark';
+  document.getElementById('canvas-wrap').className = bgClass;
+  document.querySelectorAll('#bgBtns .pill').forEach(b=>{
+    const m={'Fekete':'bg-dark','Sötét':'bg-mid','Világos':'bg-light','Fehér':'bg-white'};
+    b.classList.toggle('on', m[b.textContent.trim()]===bgClass);
+  });
+  colorKey = s.colorKey||'gray';
+  idleAnim = s.idleAnim||'morph'; speakAnim = s.speakAnim||'morph';
+  document.querySelectorAll('#idleAnimBtns .pill').forEach(b=>b.classList.toggle('on',b.textContent.toLowerCase()===animLabel(idleAnim)));
+  document.querySelectorAll('#speakAnimBtns .pill').forEach(b=>b.classList.toggle('on',b.textContent.toLowerCase()===animLabel(speakAnim)));
+  function ss(id,valId,raw,fn){const el=document.getElementById(id),vl=document.getElementById(valId);if(!el)return;el.value=raw;vl.textContent=fn(raw);}
+  opacity      = s.opacity??0.45;       ss('opSlider',    'opVal',    Math.round(opacity*100), v=>(v/100).toFixed(2));
+  speedMult    = s.speedMult??1.0;      ss('speedSlider', 'speedVal', Math.round(speedMult*10),v=>(v/10).toFixed(1)+'×');
+  movementAmp  = s.movementAmp??13;     ss('ampSlider',   'ampVal',   movementAmp,             v=>v);
+  starCount    = s.starCount??12;       ss('countSlider', 'countVal', starCount,               v=>v);
+  baseSize     = s.baseSize??11;        ss('sizeSlider',  'sizeVal',  baseSize,                v=>v);
+  orbitRadius  = s.orbitRadius??88;     ss('radiusSlider','radiusVal',orbitRadius,             v=>v);
+  innerRatio   = s.innerRatio??0.42;    ss('innerSlider', 'innerVal', Math.round(innerRatio*100),v=>(v/100).toFixed(2));
+  glowRings    = s.glowRings??4;        ss('glowSlider',  'glowVal',  glowRings,               v=>v);
+  gridInfluenceRadius = s.gridInfluenceRadius??110; ss('gridRadiusSlider','gridRadiusVal',gridInfluenceRadius,v=>v);
+  pulseAmt     = s.pulseAmt??0.8;  ss('pulseSlider','pulseVal', Math.round(pulseAmt*10), v=>(v/10).toFixed(1));
+  spinAmt      = s.spinAmt??0.4;   ss('spinSlider', 'spinVal',  Math.round(spinAmt*10),  v=>(v/10).toFixed(1));
+  stabilize    = !!s.stabilize;    document.getElementById('stabilizeBtn')   .classList.toggle('on',stabilize);
+  stabilizePos = !!s.stabilizePos; document.getElementById('stabilizePosBtn').classList.toggle('on',stabilizePos);
+  fixAxis      = !!s.fixAxis;      document.getElementById('fixAxisBtn')     .classList.toggle('on',fixAxis);
+  fixSize      = !!s.fixSize;      document.getElementById('fixSizeBtn')     .classList.toggle('on',fixSize);
+  showAxis     = !!s.showAxis;     document.getElementById('axisBtn')        .classList.toggle('on',showAxis);
+  updateMorphNote();
+}
+
+function pcColor(key) { const p=palette[key]||palette.gray; return `rgb(${p.r},${p.g},${p.b})`; }
+
+function renderPresets() {
+  const panel = document.getElementById('presets-panel');
+  panel.innerHTML = '';
+
+  // If idle is locked, show it as a locked card at top
+  if (idleLocked && lockedIdleSettings) {
+    const card = document.createElement('div');
+    card.className = 'pcard pcard-locked';
+    const top = document.createElement('div'); top.className='pcard-top';
+    const dot = document.createElement('div'); dot.className='pcard-dot'; dot.style.background=pcColor(lockedIdleSettings.colorKey);
+    const name = document.createElement('span'); name.className='pcard-name'; name.textContent='Idle (locked)';
+    const badge = document.createElement('span'); badge.className='role-badge idle'; badge.textContent='IDLE';
+    const lock = document.createElement('span'); lock.textContent='🔒'; lock.style.cssText='font-size:10px;opacity:0.5;flex-shrink:0;';
+    top.append(dot, name, badge, lock);
+    const meta = document.createElement('div'); meta.className='pcard-meta';
+    const s = lockedIdleSettings;
+    const fmtMap={'sq':'1:1','wide':'16:9','tall':'9:16','wide3':'3:1'};
+    meta.textContent=`${fmtMap[s.fmt]||s.fmt} · ${s.colorKey} · ${aLabelShort[s.idleAnim]||s.idleAnim}`;
+    card.append(top, meta);
+    panel.appendChild(card);
+  }
+
+  if (presets.length === 0 && !(idleLocked && lockedIdleSettings)) {
+    panel.innerHTML = '<div id="presets-empty">No presets saved.<br>Save your first variant.</div>';
+    return;
+  }
+  if (presets.length === 0) return;
+
+  presets.forEach(p => {
+    const s = p.settings;
+    const bgMap={'bg-dark':'black','bg-mid':'dark','bg-light':'light','bg-white':'white'};
+    const fmtMap={'sq':'1:1','wide':'16:9','tall':'9:16','wide3':'3:1'};
+    const card = document.createElement('div');
+    card.className = 'pcard' + (p.id===activePresetId?' active':'');
+    const top = document.createElement('div'); top.className='pcard-top';
+    const dot = document.createElement('div'); dot.className='pcard-dot'; dot.style.background=pcColor(s.colorKey);
+    const name = document.createElement('span'); name.className='pcard-name'; name.textContent=p.name; name.title=p.name;
+    if (p.role) {
+      const badge = document.createElement('span');
+      badge.className = `role-badge ${p.role}`;
+      badge.textContent = p.role === 'idle' ? 'IDLE' : p.role === 'thinking' ? 'THINK' : 'SPEAK';
+      top.append(dot, name, badge);
+    } else {
+      top.append(dot, name);
+    }
+    const del = document.createElement('button'); del.className='pcard-del'; del.textContent='×';
+    del.onclick=e=>{e.stopPropagation();if(confirm('Delete this preset?')){deletePreset(p.id);}};
+    top.appendChild(del);
+    const meta = document.createElement('div'); meta.className='pcard-meta';
+    meta.textContent=`${fmtMap[s.fmt]||s.fmt} · ${bgMap[s.bgClass]||s.bgClass} · ${aLabelShort[s.idleAnim]||s.idleAnim}`;
+    card.append(top,meta);
+    if (p.thumbnail) {
+      const img=document.createElement('img'); img.src=p.thumbnail; img.className='pcard-thumb'; card.appendChild(img);
+    }
+    card.addEventListener('click', ()=>openPModal(p.id));
+    panel.appendChild(card);
+  });
+}
+
+function savePreset() {
+  const input = document.getElementById('preset-name-input');
+  const name = input.value.trim() || `preset-${presets.length+1}`;
+  const id = Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const thumbnail = cv.toDataURL('image/jpeg', 0.7);
+  const role = state; // 'idle', 'thinking', or 'speaking'
+  presets.push({ id, name, role, settings: captureSettings(), thumbnail });
+  activePresetId = id;
+  input.value = '';
+  renderPresets();
+  renderPairs();
+}
+
+function loadPreset(id) {
+  const p = presets.find(x=>x.id===id); if(!p)return;
+  activePresetId = id;
+  applySettings(p.settings);
+  renderPresets();
+}
+
+function deletePreset(id) {
+  presets = presets.filter(x=>x.id!==id);
+  if(activePresetId===id) activePresetId=null;
+  // Remove any pairs that reference this preset
+  pairs = pairs.filter(p=>p.idleId!==id && p.speakId!==id);
+  if(activePairId) { const ap=pairs.find(p=>p.id===activePairId); if(!ap) deactivatePair(); }
+  renderPresets();
+  renderPairs();
+}
+
+function exportPresetsJSON() {
+  if(!presets.length){alert('No presets saved.');return;}
+  const blob=new Blob([JSON.stringify({version:1,presets},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='star-field-presets.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function importPresetsJSON() { document.getElementById('preset-file-input').click(); }
+function handlePresetFileImport(e) {
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try {
+      const data=JSON.parse(ev.target.result);
+      if(!data.presets||!Array.isArray(data.presets))throw new Error('Érvénytelen formátum');
+      const merge=confirm(`${data.presets.length} preset. Add to existing?\n(Cancel = replace)`);
+      if(!merge)presets=[];
+      data.presets.forEach(p=>{const newId=Date.now().toString(36)+Math.random().toString(36).slice(2,5);presets.push({...p,id:newId});});
+      renderPresets();
+    } catch(err){alert('Invalid JSON: '+err.message);}
+  };
+  reader.readAsText(file); e.target.value='';
+}
+
+// ── Preset Modal ──
+let pmodalId = null;
+
+function openPModal(id) {
+  const p = presets.find(x=>x.id===id); if(!p)return;
+  pmodalId = id;
+  const s = p.settings;
+  document.getElementById('pmodal-dot').style.background = pcColor(s.colorKey);
+  document.getElementById('pmodal-name').value = p.name;
+  const bgMap={'bg-dark':'black','bg-mid':'dark','bg-light':'light','bg-white':'white'};
+  const fmtMap={'sq':'1:1','wide':'16:9','tall':'9:16','wide3':'3:1'};
+  document.getElementById('pmodal-meta').innerHTML =
+    `${fmtMap[s.fmt]||s.fmt} &nbsp;·&nbsp; ${bgMap[s.bgClass]||s.bgClass} &nbsp;·&nbsp; szín: ${s.colorKey}<br>` +
+    `idle: ${aLabelShort[s.idleAnim]||s.idleAnim} &nbsp;·&nbsp; speak: ${aLabelShort[s.speakAnim]||s.speakAnim} &nbsp;·&nbsp; ★ ${s.starCount||12} db`;
+  const mc=document.getElementById('pmodal-canvas'), mct=mc.getContext('2d');
+  const mf=fmts[s.fmt]||fmts.sq;
+  const maxW=368, maxH=260, scale=Math.min(maxW/mf.w, maxH/mf.h);
+  mc.width=Math.round(mf.w*scale); mc.height=Math.round(mf.h*scale);
+  const bgColors={'bg-dark':'#0e0e0f','bg-mid':'#1e1e20','bg-light':'#f0f0ec','bg-white':'#ffffff'};
+  document.getElementById('pmodal-preview').style.background = bgColors[s.bgClass]||'#0e0e0f';
+  if(p.thumbnail){
+    const img=new Image(); img.onload=()=>mct.drawImage(img,0,0,mc.width,mc.height); img.src=p.thumbnail;
+  } else {
+    mct.fillStyle=bgColors[s.bgClass]||'#0e0e0f'; mct.fillRect(0,0,mc.width,mc.height);
+    mct.fillStyle='rgba(255,255,255,0.15)'; mct.font=`10px 'DM Mono',monospace`;
+    mct.textAlign='center'; mct.fillText('no preview',mc.width/2,mc.height/2);
+  }
+  document.getElementById('pmodal').style.display='flex';
+}
+
+function closePModal() { document.getElementById('pmodal').style.display='none'; pmodalId=null; }
+
+function pmodalLoad() {
+  if(!pmodalId)return;
+  const p=presets.find(x=>x.id===pmodalId); if(p){const n=document.getElementById('pmodal-name').value.trim();if(n)p.name=n;}
+  closePModal(); loadPreset(pmodalId); switchTab('editor');
+}
+
+function pmodalOverwrite() {
+  if(!pmodalId)return;
+  const p=presets.find(x=>x.id===pmodalId); if(!p)return;
+  const n=document.getElementById('pmodal-name').value.trim(); if(n)p.name=n;
+  p.settings=captureSettings();
+  p.role=state; // update role too
+  p.thumbnail=cv.toDataURL('image/jpeg',0.7);
+  const mc=document.getElementById('pmodal-canvas'),mct=mc.getContext('2d');
+  const img=new Image(); img.onload=()=>mct.drawImage(img,0,0,mc.width,mc.height); img.src=p.thumbnail;
+  document.getElementById('pmodal-dot').style.background=pcColor(p.settings.colorKey);
+  renderPresets(); renderPairs();
+}
+
+function pmodalDelete() {
+  if(!pmodalId)return;
+  if(confirm('Delete this preset?')){ closePModal(); deletePreset(pmodalId); }
+}
+
+// ══════════════════════════════════
+// PAIR SYSTEM
+// ══════════════════════════════════
+let pairs = [];        // [{id, name, idleId, speakId}]
+let activePairId = null;
+let pairBlend = 0;     // smooth 0→1 blend for pair transitions
+
+// ── Triangle mode ──
+let triActive = false;
+let triIdleSettings  = null;
+let triThinkSettings = null;
+let triSpeakSettings = null;
+
+// Live interpolated settings when a pair is active
+let pairIdleSettings = null, pairSpeakSettings = null;
+
+function renderPairs() {
+  const list = document.getElementById('pairs-list');
+  list.innerHTML = '';
+
+  const idlePreset    = idleLocked && lockedIdleSettings
+    ? { id:'__locked_idle__', name:'Idle (locked)', role:'idle', settings:lockedIdleSettings, thumbnail:null }
+    : presets.find(p => p.role === 'idle');
+  const thinkPresets  = presets.filter(p => p.role === 'thinking');
+  const speakPresets  = presets.filter(p => p.role === 'speaking');
+  const activePresets = presets.filter(p => p.role === 'thinking' || p.role === 'speaking');
+
+  const canTriangle = idlePreset && thinkPresets.length > 0 && speakPresets.length > 0;
+
+  // ── Triangle mode section ──
+  if (canTriangle) {
+    const triWrap = document.createElement('div');
+    triWrap.style.cssText = `border:0.5px solid ${triActive?'var(--accent)':'var(--border)'};border-radius:8px;margin-bottom:8px;overflow:hidden;transition:border-color 0.15s;`;
+
+    // Header row
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;';
+    const triIcon = document.createElement('span'); triIcon.textContent='△'; triIcon.style.cssText='font-size:13px;color:var(--text3);flex-shrink:0;';
+    const triLbl = document.createElement('div'); triLbl.style.cssText='flex:1;';
+    const triMain = document.createElement('div'); triMain.style.cssText='font-size:11px;font-family:"DM Mono",monospace;color:'+(triActive?'var(--text)':'var(--text2)')+';';
+    triMain.textContent = 'Triangle mode';
+    const triSub = document.createElement('div'); triSub.style.cssText='font-size:10px;font-family:"DM Mono",monospace;color:var(--text3);margin-top:1px;';
+    triSub.textContent = triActive ? '● active – use Idle/Thinking/Speaking buttons' : 'Idle + Thinking + Speaking';
+    if (triActive) triSub.style.color = 'var(--accent)';
+    triLbl.append(triMain, triSub);
+
+    // Thumbnail row
+    const thumbRow = document.createElement('div');
+    thumbRow.style.cssText = 'display:flex;align-items:center;gap:4px;padding:0 10px 8px;';
+
+    const makeThumb = (p) => {
+      if (!p) return Object.assign(document.createElement('div'),{className:'pair-thumb-empty'});
+      return p.thumbnail
+        ? Object.assign(document.createElement('img'),{src:p.thumbnail,className:'pair-thumb'})
+        : Object.assign(document.createElement('div'),{className:'pair-thumb-empty'});
+    };
+
+    // Show currently selected think/speak in triangle
+    const tP = thinkPresets.find(p=>p.id===triThinkId) || thinkPresets[0];
+    const sP = speakPresets.find(p=>p.id===triSpeakId) || speakPresets[0];
+    thumbRow.append(makeThumb(idlePreset),
+      Object.assign(document.createElement('span'),{className:'pair-arrow',textContent:'⇆'}),
+      makeThumb(tP),
+      Object.assign(document.createElement('span'),{className:'pair-arrow',textContent:'⇆'}),
+      makeThumb(sP));
+
+    head.append(triIcon, triLbl);
+    triWrap.append(head, thumbRow);
+
+    // If multiple think/speak presets, show selectors when active
+    if (triActive && (thinkPresets.length > 1 || speakPresets.length > 1)) {
+      const selRow = document.createElement('div');
+      selRow.style.cssText = 'display:flex;gap:0;border-top:0.5px solid var(--border);';
+      const selStyle = 'width:100%;background:transparent;border:0.5px solid var(--border2);border-radius:4px;color:var(--text2);font-family:"DM Mono",monospace;font-size:10px;padding:3px 5px;outline:none;cursor:pointer;';
+
+      if (thinkPresets.length > 1) {
+        const td = document.createElement('div'); td.style.cssText='flex:1;padding:5px 8px;border-right:0.5px solid var(--border);';
+        const tl = document.createElement('div'); tl.style.cssText='font-size:9px;font-family:"DM Mono",monospace;color:var(--text3);margin-bottom:3px;'; tl.textContent='THINKING';
+        const ts = document.createElement('select'); ts.style.cssText=selStyle;
+        thinkPresets.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;if(p.id===triThinkId)o.selected=true;ts.appendChild(o);});
+        ts.onchange=e=>{e.stopPropagation();triThinkId=e.target.value;triThinkSettings=thinkPresets.find(p=>p.id===triThinkId)?.settings||null;if(state==='thinking')triggerTriTransition('thinking');renderPairs();};
+        td.append(tl,ts); selRow.appendChild(td);
+      }
+      if (speakPresets.length > 1) {
+        const sd = document.createElement('div'); sd.style.cssText='flex:1;padding:5px 8px;';
+        const sl = document.createElement('div'); sl.style.cssText='font-size:9px;font-family:"DM Mono",monospace;color:var(--text3);margin-bottom:3px;'; sl.textContent='SPEAKING';
+        const ss = document.createElement('select'); ss.style.cssText=selStyle;
+        speakPresets.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;if(p.id===triSpeakId)o.selected=true;ss.appendChild(o);});
+        ss.onchange=e=>{e.stopPropagation();triSpeakId=e.target.value;triSpeakSettings=speakPresets.find(p=>p.id===triSpeakId)?.settings||null;if(state==='speaking')triggerTriTransition('speaking');renderPairs();};
+        sd.append(sl,ss); selRow.appendChild(sd);
+      }
+      triWrap.appendChild(selRow);
+    }
+
+    triWrap.addEventListener('click', () => activateTriangle());
+    list.appendChild(triWrap);
+  }
+
+  if (list.children.length === 0) {
+    list.innerHTML = '<div id="pairs-empty">Save Idle + Thinking + Speaking<br>presets to enable Triangle mode.</div>';
+  }
+}
+
+// Triangle mode helpers
+let triThinkId = null, triSpeakId = null;
+
+function activateTriangle() {
+  if (triActive) {
+    // Deactivate
+    triActive = false;
+    triIdleSettings = triThinkSettings = triSpeakSettings = null;
+    triFrom = triTo = null; triBlend = 1;
+    triThinkId = triSpeakId = null;
+    activePairId = null;
+    setSt('idle', true); // skipTri=true: don't trigger transition
+  } else {
+    // Activate – start at idle, no transition yet
+    const ip = idleLocked && lockedIdleSettings ? {settings:lockedIdleSettings} : presets.find(p=>p.role==='idle');
+    const tp = presets.find(p=>p.role==='thinking');
+    const sp = presets.find(p=>p.role==='speaking');
+    if (!ip||!tp||!sp) return;
+    triActive = true;
+    triIdleSettings  = ip.settings;
+    triThinkSettings = tp.settings; triThinkId = tp.id;
+    triSpeakSettings = sp.settings; triSpeakId = sp.id;
+    triState = 'idle';
+    triFromState = 'idle';
+    triFrom  = ip.settings;
+    triTo    = ip.settings;
+    triBlend = 1; // fully settled at idle, no transition
+    activePairId = null;
+    setSt('idle', true); // skipTri=true: don't trigger transition on activate
+  }
+  renderPairs();
+}
+
+function swapPairSlot(pairId, slot, presetId) {
+  const pair = pairs.find(p=>p.id===pairId); if(!pair)return;
+  if (slot === 'idle')     pair.idleId  = presetId;
+  if (slot === 'speaking') pair.speakId = presetId;
+  const ip = pair.idleId === '__locked_idle__' ? { name:'Idle (locked)' } : presets.find(p=>p.id===pair.idleId);
+  const sp = presets.find(p=>p.id===pair.speakId);
+  if(ip&&sp) pair.name = `${ip.name} → ${sp.name}`;
+  if (activePairId === pairId) {
+    pairIdleSettings  = pair.idleId === '__locked_idle__' ? lockedIdleSettings : (presets.find(p=>p.id===pair.idleId)?.settings || pairIdleSettings);
+    pairSpeakSettings = presets.find(p=>p.id===pair.speakId)?.settings || pairSpeakSettings;
+    pairBlend = state === 'idle' ? 0 : 1;
+  }
+  renderPairs();
+}
+
+function createPair(idleId, speakId) {
+  const idleP  = idleId === '__locked_idle__'
+    ? { name: 'Idle (locked)', settings: lockedIdleSettings }
+    : presets.find(p=>p.id===idleId);
+  const speakP = presets.find(p=>p.id===speakId);
+  if (!idleP || !speakP) return;
+  const id = Date.now().toString(36)+Math.random().toString(36).slice(2,4);
+  const name = `${idleP.name} → ${speakP.name}`;
+  pairs.push({ id, name, idleId, speakId });
+  renderPairs();
+}
+
+function deletePair(id) {
+  if (activePairId === id) deactivatePair();
+  pairs = pairs.filter(p=>p.id!==id);
+  renderPairs();
+}
+
+function togglePair(id) {
+  if (activePairId === id) { deactivatePair(); return; }
+  activePairId = id;
+  const pair = pairs.find(p=>p.id===id);
+  const idleP = pair.idleId === '__locked_idle__'
+    ? { settings: lockedIdleSettings }
+    : presets.find(p=>p.id===pair.idleId);
+  const speakP = presets.find(p=>p.id===pair.speakId);
+  pairIdleSettings  = idleP?.settings || null;
+  pairSpeakSettings = speakP?.settings || null;
+  pairBlend = 0; // always start from idle
+  // Auto-switch state to match speak preset role so transition fires
+  const targetState = speakP?.role || 'speaking';
+  setSt(targetState);
+  renderPairs();
+}
+
+function deactivatePair() {
+  activePairId = null;
+  pairIdleSettings = null;
+  pairSpeakSettings = null;
+  pairBlend = 0;
+  renderPairs();
+}
+
+// Interpolate a numeric setting between idle and speak based on blend
+function lerpSetting(key, def) {
+  if (!pairIdleSettings || !pairSpeakSettings) return null;
+  const a = pairIdleSettings[key] ?? def;
+  const b = pairSpeakSettings[key] ?? def;
+  return a + (b - a) * blend;
+}
+
+// Override getStarParams to use interpolated settings when pair is active
+applyFmt();
+updateMorphNote();
+loop();
+</script>
+</body>
+</html>
