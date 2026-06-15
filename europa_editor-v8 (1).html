@@ -496,7 +496,7 @@ canvas { display: block; }
 
 <script>
 const cv = document.getElementById('c');
-const ct = cv.getContext('2d');
+let ct = cv.getContext('2d');
 let W, H, CX, CY;
 
 let state = 'idle', t = 0, blend = 0;
@@ -2361,18 +2361,18 @@ function _demoStartRaf() {
   if (_demoRafId) cancelAnimationFrame(_demoRafId);
   const dc  = document.getElementById('demo-canvas');
   const dct = dc ? dc.getContext('2d') : null;
+  const mainCt = ct;
   (function frame() {
-    if (!demoActive) return;
+    if (!demoActive) { ct = mainCt; return; }
     if (dct) {
-      // draw stars transparently — no background fill — on top of card colour
       dct.clearRect(0, 0, 600, 600);
-      const saved = ct; ct = dct;
+      ct = dct;
       if (playbackActive && playbackBlend < 1) {
         drawOrbitPositionMorph(easeInOut(Math.max(0, Math.min(1, playbackBlend))));
       } else {
         drawAnimStyle(currentAnim, 1.0);
       }
-      ct = saved;
+      ct = mainCt;
     }
     _demoRafId = requestAnimationFrame(frame);
   })();
