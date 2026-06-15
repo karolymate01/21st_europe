@@ -131,90 +131,62 @@ canvas { display: block; }
 .anim-group-arrow { font-size:8px; transition:transform 0.2s; }
 .anim-group-body { overflow:hidden; transition:max-height 0.25s ease; }
 
-/* ── Demo Overlay ── */
+
+/* ── Demo ── */
 #demo-overlay {
-  display: none; position: fixed; inset: 0; z-index: 9999;
-  flex-direction: column; align-items: center; justify-content: center; gap: 20px;
-  background: linear-gradient(145deg, #d8daea 0%, #cccfe0 35%, #c0c3d8 65%, #b8bdd4 100%);
+  display:none; position:fixed; inset:0; z-index:9999;
+  flex-direction:column; align-items:center; justify-content:center; gap:18px;
+  background: linear-gradient(145deg,#d8daea 0%,#cccfe0 40%,#b8bdd4 100%);
 }
-/* Chips float above the card */
-.demo-chips {
-  display: flex; flex-wrap: wrap; gap: 10px;
-  justify-content: center; max-width: 500px;
-}
+.demo-chips { display:flex; flex-wrap:wrap; gap:9px; justify-content:center; max-width:460px; }
 .demo-chip {
-  background: rgba(255,255,255,0.22);
-  border: 1px solid rgba(255,255,255,0.35);
-  border-radius: 22px; padding: 9px 16px;
-  font-size: 13px; color: rgba(255,255,255,0.95);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  cursor: pointer; transition: background 0.2s; backdrop-filter: blur(8px);
-  line-height: 1.3; max-width: 200px; text-align: center;
+  background:rgba(255,255,255,0.22); border:1px solid rgba(255,255,255,0.38);
+  border-radius:20px; padding:9px 15px; font-size:13px;
+  color:rgba(255,255,255,0.95); cursor:pointer; backdrop-filter:blur(8px);
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  transition:background .2s; line-height:1.35; text-align:center;
 }
-.demo-chip:hover { background: rgba(255,255,255,0.38); }
-/* Card */
+.demo-chip:hover { background:rgba(255,255,255,0.38); }
 .demo-card {
-  width: 370px;
-  background: rgba(168,172,196,0.55);
-  backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
-  border: 1px solid rgba(255,255,255,0.28);
-  border-radius: 30px;
-  padding: 36px 24px 68px;
-  display: flex; flex-direction: column; align-items: center;
-  box-shadow: 0 24px 64px rgba(70,75,110,0.20);
-  position: relative; box-sizing: border-box;
-  min-height: 580px;
+  width:360px; min-height:580px;
+  background:rgba(168,172,196,0.56);
+  backdrop-filter:blur(32px); -webkit-backdrop-filter:blur(32px);
+  border:1px solid rgba(255,255,255,0.28); border-radius:30px;
+  padding:36px 24px 66px; display:flex; flex-direction:column; align-items:center;
+  box-shadow:0 24px 64px rgba(70,75,110,0.22); position:relative; box-sizing:border-box;
 }
-.demo-status {
-  color: rgba(255,255,255,0.93);
-  font-size: 22px; font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  width: 100%; text-align: center;
-  min-height: 30px; margin-bottom: 28px;
-  letter-spacing: -0.01em;
+.demo-state {
+  color:rgba(255,255,255,0.93); font-size:22px; font-weight:500;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  width:100%; text-align:center; margin-bottom:28px; min-height:30px;
 }
-.demo-canvas-wrap {
-  width: 220px; height: 220px; flex-shrink: 0;
-  margin-bottom: auto;
+.demo-anim { width:220px; height:220px; border-radius:18px; overflow:hidden; flex-shrink:0; margin-bottom:auto; }
+#dcanvas { width:220px; height:220px; display:block; }
+.demo-chat { width:100%; margin-top:22px; display:flex; flex-direction:column; gap:8px; }
+.demo-msg {
+  max-width:90%; background:rgba(255,255,255,0.93); border-radius:18px;
+  padding:13px 17px; font-size:14px; line-height:1.65; color:#111;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  box-shadow:0 2px 10px rgba(0,0,0,0.07); white-space:pre-wrap;
+  word-break:break-word; display:none;
 }
-#demo-canvas { width: 220px; height: 220px; display: block; }
-.demo-chat {
-  width: 100%; margin-top: 20px;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.demo-bubble {
-  max-width: 88%;
-  background: rgba(255,255,255,0.92);
-  border-radius: 18px; padding: 13px 17px;
-  font-size: 14.5px; line-height: 1.65; color: #111;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-  white-space: pre-wrap; word-break: break-word;
-  opacity: 0; transform: translateY(8px);
-  transition: opacity 0.35s ease, transform 0.35s ease;
-  display: none;
-}
-.demo-bubble.user      { align-self: flex-end;   border-bottom-right-radius: 5px; }
-.demo-bubble.assistant { align-self: flex-start; border-bottom-left-radius: 5px; }
-.demo-bubble.visible   { display: block; opacity: 1; transform: translateY(0); }
-.demo-close {
-  position: absolute; bottom: 18px; right: 18px;
-  width: 34px; height: 34px; border-radius: 10px;
-  background: rgba(255,255,255,0.20); border: 1px solid rgba(255,255,255,0.32);
-  color: rgba(255,255,255,0.88); font-size: 15px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s; font-family: inherit;
-}
-.demo-close:hover { background: rgba(255,255,255,0.35); }
+.demo-msg.user      { align-self:flex-end;   border-bottom-right-radius:5px; }
+.demo-msg.assistant { align-self:flex-start; border-bottom-left-radius:5px; }
 .demo-open-btn {
-  display: block; width: 100%; margin-top: 10px;
-  padding: 9px 0; border-radius: 8px;
-  background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18);
-  color: rgba(255,255,255,0.72); font-size: 12px; letter-spacing: 0.07em;
-  font-family: 'DM Mono', monospace; cursor: pointer; text-align: center;
-  transition: background 0.2s, color 0.2s;
+  display:block; width:100%; margin-top:10px; padding:9px 0; border-radius:8px;
+  background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18);
+  color:rgba(255,255,255,0.72); font-size:12px; letter-spacing:.07em;
+  font-family:'DM Mono',monospace; cursor:pointer; text-align:center;
+  transition:background .2s,color .2s;
 }
-.demo-open-btn:hover { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.95); }
+.demo-open-btn:hover { background:rgba(255,255,255,0.18); color:rgba(255,255,255,0.95); }
+.demo-close {
+  position:absolute; bottom:18px; right:18px; width:34px; height:34px; border-radius:10px;
+  background:rgba(255,255,255,0.20); border:1px solid rgba(255,255,255,0.30);
+  color:rgba(255,255,255,0.88); font-size:15px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .2s;
+}
+.demo-close:hover { background:rgba(255,255,255,0.35); }
 </style>
 <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.10.1/dist/ffmpeg.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
@@ -663,22 +635,6 @@ function loop() {
   }
 
   if (showAxis) drawAxis();
-
-  // Demo canvas — rendered synchronously in the same frame, no race condition
-  if (demoActive) {
-    const _dc = document.getElementById('demo-canvas');
-    if (_dc) {
-      const _mainCt = ct;
-      ct = _dc.getContext('2d');
-      ct.clearRect(0, 0, 600, 600);
-      if (playbackActive && playbackBlend < 1) {
-        drawOrbitPositionMorph(easeInOut(Math.max(0, Math.min(1, playbackBlend))));
-      } else {
-        drawAnimStyle(currentAnim, 1.0);
-      }
-      ct = _mainCt;
-    }
-  }
 
   requestAnimationFrame(loop);
 }
@@ -1676,13 +1632,7 @@ function renderPresets() {
     sc.addEventListener('click', ()=>loadPresetWithMorph(p.id));
     panel.appendChild(sc);
   });
-  if (presets.length > 0) {
-    const demoBtn = document.createElement('button');
-    demoBtn.className = 'demo-open-btn';
-    demoBtn.textContent = 'DEMO';
-    demoBtn.onclick = () => openDemo();
-    panel.appendChild(demoBtn);
-  }
+  if(presets.length>0){var _db=document.createElement('button');_db.className='demo-open-btn';_db.textContent='DEMO';_db.onclick=function(){demoOpen();};panel.appendChild(_db);}
 }
 
 function showEditorSaveInput() {
@@ -2309,126 +2259,96 @@ applyFmt();
 window.addEventListener('resize', () => { if (phoneMode) setupPhonePreview(); });
 currentVisualSettings = captureSettings();
 
-// ── Demo Mode ──
+
+/* ========= DEMO ========= */
 const DEMO_QA = [
-  {
-    q: "I lost my passport in Bangkok, but Hungary has no embassy here. What do I do?",
-    a: "Don't panic — here's exactly what to do: 🇭🇺\n\nFile a police report immediately at the nearest Thai police station — you'll need this for everything else.\n\nContact the Hungarian Embassy in Kuala Lumpur — it covers Thailand. Reach them at +60 3-2182 8840.\n\nRequest an Emergency Travel Document (ETD) — a temporary one-way travel document for stranded citizens.\n\nWalk into any EU member state's embassy in Bangkok — they are obligated to assist EU citizens in emergencies."
-  },
-  {
-    q: "My train was delayed and I missed my connecting flight. Am I entitled to compensation?",
-    a: "Yes — EU law covers you here.\n\nUnder EC 261/2004, if your delay causes you to miss a connecting flight booked as one ticket and you arrive 3+ hours late, you're entitled to €250–€600 depending on distance.\n\nContact your airline in writing. If they refuse, escalate to your national enforcement body."
-  },
-  {
-    q: "I'm working in another EU country. Do I need new health insurance?",
-    a: "Not necessarily.\n\nAs an EU citizen working abroad, you're covered by the social security system of the country where you work.\n\nYour employer should register you. Your EHIC from home remains valid for temporary stays but not for your new country of residence."
-  }
+  { q:"I lost my passport in Bangkok, but Hungary has no embassy here. What do I do?",
+    a:"Don't panic — here's exactly what to do: 🇭🇺\n\nFile a police report at the nearest Thai police station.\n\nContact the Hungarian Embassy in Kuala Lumpur — it covers Thailand: +60 3-2182 8840.\n\nRequest an Emergency Travel Document (ETD) — a temporary one-way travel document.\n\nWalk into any EU member state's embassy in Bangkok — they must assist EU citizens in emergencies." },
+  { q:"My train was delayed and I missed my connecting flight. Am I entitled to compensation?",
+    a:"Yes — EU law covers you.\n\nUnder EC 261/2004, if a delay causes you to miss a connecting flight (one ticket) and arrive 3+ hours late, you're entitled to €250–€600.\n\nContact your airline in writing. If they refuse, escalate to your national enforcement body." },
+  { q:"I'm working in another EU country. Do I need new health insurance?",
+    a:"Not necessarily.\n\nAs an EU citizen working abroad you're covered by the host country's social security system. Your employer should register you.\n\nYour EHIC from home stays valid for temporary stays but not as a resident." }
 ];
 
-let demoActive=false, demoPhase='idle', demoTimer=0, demoQaIndex=0;
-let _demoRafId=null, _demoTypeTimer=null;
-const DEMO_DUR = { listening: 220, speaking: 380 };
-const TYPE_MS  = 20;
+let _dOn=false, _dMir=null, _dTyper=null;
 
-function _buildDemoChips() {
-  const wrap = document.getElementById('demo-chips');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-  DEMO_QA.forEach((qa, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'demo-chip';
-    btn.textContent = qa.q;
-    btn.onclick = () => _startDemoQA(i);
-    wrap.appendChild(btn);
-  });
-}
-
-function openDemo() {
+function demoOpen() {
   if (!presets.length) return;
-  demoActive = true; demoPhase = 'idle'; demoTimer = 0; demoQaIndex = 0;
-  document.getElementById('demo-overlay').style.display = 'flex';
-  document.getElementById('demo-chips').style.display = 'flex';
-  document.getElementById('demo-status').textContent = '';
-  _demoClearBubbles();
-  _buildDemoChips();
-  _demoStartRaf();
+  _dOn=true;
+  document.getElementById('demo-overlay').style.display='flex';
+  const cw=document.getElementById('demo-chips');
+  cw.innerHTML=''; cw.style.display='flex';
+  DEMO_QA.forEach(function(qa,i){
+    var b=document.createElement('button');
+    b.className='demo-chip'; b.textContent=qa.q;
+    b.onclick=function(){_dRun(i);};
+    cw.appendChild(b);
+  });
+  document.getElementById('demo-state').textContent='';
+  _dHide();
+  var dc=document.getElementById('dcanvas');
+  var dx=dc&&dc.getContext('2d');
+  if(_dMir)cancelAnimationFrame(_dMir);
+  (function m(){
+    if(!_dOn)return;
+    if(dx){dx.clearRect(0,0,600,600);dx.drawImage(cv,0,0,600,600);}
+    _dMir=requestAnimationFrame(m);
+  })();
   playAll();
 }
 
-function closeDemo() {
-  demoActive = false;
-  if (_demoRafId)    { cancelAnimationFrame(_demoRafId); _demoRafId = null; }
-  if (_demoTypeTimer){ clearInterval(_demoTypeTimer);    _demoTypeTimer = null; }
-  document.getElementById('demo-overlay').style.display = 'none';
+function demoClose(){
+  _dOn=false;
+  if(_dMir){cancelAnimationFrame(_dMir);_dMir=null;}
+  if(_dTyper){clearInterval(_dTyper);_dTyper=null;}
+  document.getElementById('demo-overlay').style.display='none';
   stopSequence();
 }
 
-function _startDemoQA(idx) {
-  demoQaIndex = idx;
-  demoPhase = 'listening';
-  demoTimer = DEMO_DUR.listening;
-  document.getElementById('demo-chips').style.display = 'none';
-  _demoClearBubbles();
-  document.getElementById('demo-status').textContent = 'Listening...';
-  setTimeout(() => { if (demoActive) _typeInto(document.getElementById('demo-bubble-user'), DEMO_QA[idx].q); }, 350);
+function _dHide(){
+  ['dmsg-u','dmsg-a'].forEach(function(id){
+    var e=document.getElementById(id);
+    if(e){e.style.display='none';e.textContent='';}
+  });
 }
 
-function _demoStartRaf() { /* rendering now happens in main loop */ }
-
-function _demoClearBubbles() {
-  if (_demoTypeTimer){ clearInterval(_demoTypeTimer); _demoTypeTimer = null; }
-  const u = document.getElementById('demo-bubble-user');
-  const a = document.getElementById('demo-bubble-ai');
-  if (u) { u.classList.remove('visible'); u.textContent = ''; }
-  if (a) { a.classList.remove('visible'); a.textContent = ''; }
+function _dRun(qi){
+  document.getElementById('demo-chips').style.display='none';
+  _dHide();
+  document.getElementById('demo-state').textContent='Listening...';
+  _dType('dmsg-u',DEMO_QA[qi].q,'user',function(){
+    setTimeout(function(){
+      if(!_dOn)return;
+      document.getElementById('demo-state').textContent='Speaking...';
+      _dType('dmsg-a',DEMO_QA[qi].a,'assistant',function(){
+        setTimeout(function(){
+          if(!_dOn)return;
+          _dHide();
+          document.getElementById('demo-state').textContent='';
+          document.getElementById('demo-chips').style.display='flex';
+        },3000);
+      });
+    },1200);
+  });
 }
 
-function _typeInto(el, text) {
-  if (!el) return;
-  if (_demoTypeTimer){ clearInterval(_demoTypeTimer); _demoTypeTimer = null; }
-  el.textContent = '';
-  el.style.display = 'block';
-  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
-  let i = 0;
-  _demoTypeTimer = setInterval(() => {
-    if (!demoActive) { clearInterval(_demoTypeTimer); return; }
-    if (i < text.length) el.textContent += text[i++];
-    else { clearInterval(_demoTypeTimer); _demoTypeTimer = null; }
-  }, TYPE_MS);
+function _dType(id,text,cls,cb){
+  if(_dTyper){clearInterval(_dTyper);_dTyper=null;}
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.className='demo-msg '+cls;
+  el.textContent='';
+  el.style.display='block';
+  var i=0;
+  _dTyper=setInterval(function(){
+    if(!_dOn){clearInterval(_dTyper);return;}
+    if(i<text.length)el.textContent+=text[i++];
+    else{clearInterval(_dTyper);_dTyper=null;if(cb)cb();}
+  },20);
 }
-
-function demoTick() {
-  if (!demoActive || demoPhase === 'idle') return;
-  if (--demoTimer > 0) return;
-  if (demoPhase === 'listening') {
-    demoPhase = 'speaking'; demoTimer = DEMO_DUR.speaking;
-    document.getElementById('demo-status').textContent = 'Speaking...';
-    setTimeout(() => { if (demoActive) _typeInto(document.getElementById('demo-bubble-ai'), DEMO_QA[demoQaIndex % DEMO_QA.length].a); }, 350);
-  } else if (demoPhase === 'speaking') {
-    // show chips again for next selection
-    demoPhase = 'idle';
-    _demoClearBubbles();
-    document.getElementById('demo-status').textContent = '';
-    document.getElementById('demo-chips').style.display = 'flex';
-  }
-}
+/* ========================= */
 
 loop();
 </script>
 
-<div id="demo-overlay">
-  <div class="demo-chips" id="demo-chips"></div>
-  <div class="demo-card">
-    <div id="demo-status" class="demo-status"></div>
-    <div class="demo-canvas-wrap">
-      <canvas id="demo-canvas" width="600" height="600"></canvas>
-    </div>
-    <div class="demo-chat" id="demo-chat">
-      <div class="demo-bubble user"      id="demo-bubble-user"></div>
-      <div class="demo-bubble assistant" id="demo-bubble-ai"></div>
-    </div>
-    <button class="demo-close" onclick="closeDemo()" title="Close">&#9733;</button>
-  </div>
-</div>
 </body>
-</html>
