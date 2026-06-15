@@ -135,60 +135,59 @@ canvas { display: block; }
 #demo-overlay {
   display: none; position: fixed; inset: 0; z-index: 9999;
   align-items: center; justify-content: center;
-  background: linear-gradient(150deg, #c8ccda 0%, #b3bace 45%, #a9b3c8 100%);
+  background: linear-gradient(145deg, #d8daea 0%, #cccfe0 35%, #c0c3d8 65%, #b8bdd4 100%);
 }
 .demo-card {
-  width: 400px;
-  background: rgba(155,163,180,0.45);
-  backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255,255,255,0.32);
-  border-radius: 32px;
-  padding: 40px 32px 32px;
-  display: flex; flex-direction: column; align-items: center; gap: 0;
-  box-shadow: 0 28px 80px rgba(0,0,0,0.18), 0 2px 0 rgba(255,255,255,0.22) inset;
+  width: 360px; min-height: 620px;
+  background: rgba(172,176,196,0.52);
+  backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255,255,255,0.30);
+  border-radius: 30px;
+  padding: 36px 24px 28px;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 20px 60px rgba(80,85,120,0.18);
   position: relative;
+  gap: 0;
 }
 .demo-status {
   color: rgba(255,255,255,0.92);
-  font-size: 16px; font-weight: 500; letter-spacing: 0.04em;
-  font-family: 'DM Mono', monospace;
-  min-height: 24px; margin-bottom: 20px;
-  transition: opacity 0.4s;
-  text-align: center;
+  font-size: 22px; font-weight: 500; letter-spacing: 0.01em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  width: 100%; text-align: center;
+  min-height: 32px; margin-bottom: 24px;
 }
 .demo-canvas-wrap {
-  width: 260px; height: 260px;
-  border-radius: 50%; overflow: hidden;
-  flex-shrink: 0; margin-bottom: 22px;
-  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  width: 240px; height: 240px; flex-shrink: 0;
+  margin-bottom: 28px;
+  display: flex; align-items: center; justify-content: center;
 }
-#demo-canvas { width: 260px; height: 260px; display: block; }
+#demo-canvas { width: 240px; height: 240px; display: block; }
+.demo-bubble-area {
+  width: 100%; flex: 1;
+  display: flex; align-items: flex-end;
+  min-height: 100px;
+}
 .demo-bubble {
-  width: 100%;
-  background: rgba(255,255,255,0.92);
-  border-radius: 18px; padding: 16px 20px;
-  font-size: 14px; line-height: 1.65; color: #1a1a1e;
+  background: rgba(255,255,255,0.93);
+  border-radius: 20px;
+  padding: 14px 18px;
+  font-size: 14px; line-height: 1.65; color: #111;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  opacity: 0; transform: translateY(10px);
+  opacity: 0; transform: translateY(12px);
   transition: opacity 0.4s ease, transform 0.4s ease;
-  min-height: 52px; box-sizing: border-box;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  max-width: 90%;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 .demo-bubble.visible { opacity: 1; transform: translateY(0); }
-.demo-bubble-label {
-  font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-  color: rgba(100,110,130,0.7); margin-bottom: 5px; font-family: 'DM Mono', monospace;
-}
 .demo-close {
   position: absolute; bottom: 18px; right: 18px;
-  width: 36px; height: 36px; border-radius: 50%;
-  background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.32);
-  color: rgba(255,255,255,0.8); font-size: 14px; cursor: pointer;
+  width: 34px; height: 34px; border-radius: 10px;
+  background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.85); font-size: 14px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.2s;
-  font-family: inherit;
+  transition: background 0.2s; font-family: inherit;
 }
-.demo-close:hover { background: rgba(255,255,255,0.30); }
+.demo-close:hover { background: rgba(255,255,255,0.35); }
 .demo-open-btn {
   display: block; width: 100%; margin-top: 10px;
   padding: 9px 0; border-radius: 8px;
@@ -2276,20 +2275,29 @@ window.addEventListener('resize', () => { if (phoneMode) setupPhonePreview(); })
 currentVisualSettings = captureSettings();
 
 // ── Demo Mode ──
-// Edit DEMO_QA to customise the Q&A bubbles shown during the demo
+// Edit DEMO_QA to customise the Q&A bubbles
 const DEMO_QA = [
-  { q: "...", a: "..." },
-  { q: "...", a: "..." },
-  { q: "...", a: "..." }
+  {
+    q: "I lost my passport in Bangkok, but Hungary has no embassy here. What do I do?",
+    a: "Don't panic — here's exactly what to do: 🇭🇺\n\nFile a police report immediately at the nearest Thai police station — you'll need this for everything else.\n\nContact the Hungarian Embassy in Kuala Lumpur — it covers Thailand. Reach them at +60 3-2182 8840.\n\nRequest an Emergency Travel Document (ETD) — a temporary one-way travel document for stranded citizens.\n\nWalk into any EU member state's embassy in Bangkok — they are obligated to assist EU citizens in emergencies."
+  },
+  {
+    q: "My train was delayed and I missed my connecting flight. Am I entitled to compensation?",
+    a: "Yes — EU law covers you here.\n\nUnder EC 261/2004, if your delay causes you to miss a connecting flight booked as one ticket and you arrive 3+ hours late, you're entitled to compensation of €250–€600 depending on distance.\n\nContact your airline in writing within 6 months. If they refuse, escalate to your national enforcement body."
+  },
+  {
+    q: "I'm working in another EU country. Do I need a new health insurance?",
+    a: "Not necessarily.\n\nAs an EU citizen working abroad, you're covered by the social security system of the country where you work — not your home country.\n\nYour employer should register you. You'll get a local health card. Your European Health Insurance Card (EHIC) from home remains valid for temporary stays but not for your new country of residence."
+  }
 ];
 
 let demoActive = false;
-let demoPhase  = 'idle';   // 'idle' | 'listening' | 'speaking'
+let demoPhase  = 'idle';
 let demoTimer  = 0;
 let demoQaIndex = 0;
 let _demoMirrorId = null;
 
-const DEMO_DUR = { idle: 60, listening: 220, speaking: 300 };
+const DEMO_DUR = { idle: 60, listening: 220, speaking: 340 };
 
 function openDemo() {
   if (!presets.length) return;
@@ -2312,17 +2320,16 @@ function closeDemo() {
 
 function _startDemoMirror() {
   if (_demoMirrorId) cancelAnimationFrame(_demoMirrorId);
-  function mirror() {
+  (function mirror() {
     if (!demoActive) return;
-    const dc  = document.getElementById('demo-canvas');
+    const dc = document.getElementById('demo-canvas');
     if (dc && canvas) {
       const ctx = dc.getContext('2d');
       ctx.clearRect(0, 0, 600, 600);
       ctx.drawImage(canvas, 0, 0, 600, 600);
     }
     _demoMirrorId = requestAnimationFrame(mirror);
-  }
-  _demoMirrorId = requestAnimationFrame(mirror);
+  })();
 }
 
 function demoTick() {
@@ -2331,7 +2338,7 @@ function demoTick() {
   if      (demoPhase === 'idle')      { demoPhase = 'listening'; demoTimer = DEMO_DUR.listening; }
   else if (demoPhase === 'listening') { demoPhase = 'speaking';  demoTimer = DEMO_DUR.speaking;  }
   else {
-    demoQaIndex = (demoQaIndex + 1) % Math.max(1, DEMO_QA.length);
+    demoQaIndex = (demoQaIndex + 1) % DEMO_QA.length;
     demoPhase   = 'idle';
     demoTimer   = DEMO_DUR.idle;
   }
@@ -2339,31 +2346,27 @@ function demoTick() {
 }
 
 function _updateDemoUI() {
-  const stEl  = document.getElementById('demo-status');
-  const bbEl  = document.getElementById('demo-bubble');
-  const lblEl = document.getElementById('demo-bubble-label');
-  const txtEl = document.getElementById('demo-bubble-text');
+  const stEl = document.getElementById('demo-status');
+  const bbEl = document.getElementById('demo-bubble');
   if (!stEl || !bbEl) return;
-
-  const qa = DEMO_QA[demoQaIndex % Math.max(1, DEMO_QA.length)] || {};
+  const qa = DEMO_QA[demoQaIndex % DEMO_QA.length] || {};
 
   bbEl.classList.remove('visible');
   setTimeout(() => {
     if (demoPhase === 'idle') {
       stEl.textContent = '';
-      bbEl.style.visibility = 'hidden';
+      bbEl.innerHTML = '';
+      bbEl.style.display = 'none';
     } else {
-      bbEl.style.visibility = 'visible';
+      bbEl.style.display = '';
       if (demoPhase === 'listening') {
         stEl.textContent = 'Listening...';
-        lblEl.textContent = 'You';
-        txtEl.textContent = qa.q || '...';
+        bbEl.innerHTML = qa.q ? qa.q.replace(/\n/g, '<br>') : '';
       } else {
         stEl.textContent = 'Speaking...';
-        lblEl.textContent = 'Assistant';
-        txtEl.textContent = qa.a || '...';
+        bbEl.innerHTML = qa.a ? qa.a.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>') : '';
       }
-      requestAnimationFrame(() => bbEl.classList.add('visible'));
+      requestAnimationFrame(() => requestAnimationFrame(() => bbEl.classList.add('visible')));
     }
   }, 320);
 }
@@ -2377,11 +2380,10 @@ loop();
     <div class="demo-canvas-wrap">
       <canvas id="demo-canvas" width="600" height="600"></canvas>
     </div>
-    <div id="demo-bubble" class="demo-bubble">
-      <div class="demo-bubble-label" id="demo-bubble-label"></div>
-      <div id="demo-bubble-text"></div>
+    <div class="demo-bubble-area">
+      <div id="demo-bubble" class="demo-bubble"></div>
     </div>
-    <button class="demo-close" onclick="closeDemo()" title="Close">&#10006;</button>
+    <button class="demo-close" onclick="closeDemo()" title="Close">&#9733;</button>
   </div>
 </div>
 </body>
