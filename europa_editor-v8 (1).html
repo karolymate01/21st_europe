@@ -138,52 +138,54 @@ canvas { display: block; }
   background: linear-gradient(145deg, #d8daea 0%, #cccfe0 35%, #c0c3d8 65%, #b8bdd4 100%);
 }
 .demo-card {
-  width: 360px; min-height: 620px;
-  background: rgba(172,176,196,0.52);
+  width: 380px;
+  background: rgba(168,172,192,0.55);
   backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px);
-  border: 1px solid rgba(255,255,255,0.30);
+  border: 1px solid rgba(255,255,255,0.28);
   border-radius: 30px;
-  padding: 36px 24px 28px;
+  padding: 40px 26px 72px;
   display: flex; flex-direction: column; align-items: center;
-  box-shadow: 0 20px 60px rgba(80,85,120,0.18);
+  box-shadow: 0 24px 64px rgba(70,75,110,0.20);
   position: relative;
-  gap: 0;
+  min-height: 660px;
+  box-sizing: border-box;
 }
 .demo-status {
-  color: rgba(255,255,255,0.92);
-  font-size: 22px; font-weight: 500; letter-spacing: 0.01em;
+  color: rgba(255,255,255,0.93);
+  font-size: 22px; font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   width: 100%; text-align: center;
-  min-height: 32px; margin-bottom: 24px;
+  min-height: 30px; margin-bottom: 32px;
+  letter-spacing: -0.01em;
 }
 .demo-canvas-wrap {
-  width: 240px; height: 240px; flex-shrink: 0;
-  margin-bottom: 28px;
+  width: 220px; height: 220px; flex-shrink: 0;
+  margin-bottom: auto;
   display: flex; align-items: center; justify-content: center;
 }
-#demo-canvas { width: 240px; height: 240px; display: block; }
-.demo-bubble-area {
-  width: 100%; flex: 1;
-  display: flex; align-items: flex-end;
-  min-height: 100px;
+#demo-canvas { width: 220px; height: 220px; display: block; }
+.demo-bubble-wrap {
+  width: 100%; margin-top: 28px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1);
 }
+.demo-bubble-wrap.open { max-height: 500px; }
 .demo-bubble {
-  background: rgba(255,255,255,0.93);
+  background: rgba(255,255,255,0.92);
   border-radius: 20px;
   padding: 14px 18px;
-  font-size: 14px; line-height: 1.65; color: #111;
+  font-size: 14.5px; line-height: 1.65; color: #111;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  opacity: 0; transform: translateY(12px);
-  transition: opacity 0.4s ease, transform 0.4s ease;
-  max-width: 90%;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
-.demo-bubble.visible { opacity: 1; transform: translateY(0); }
 .demo-close {
-  position: absolute; bottom: 18px; right: 18px;
-  width: 34px; height: 34px; border-radius: 10px;
+  position: absolute; bottom: 20px; right: 20px;
+  width: 36px; height: 36px; border-radius: 10px;
   background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.35);
-  color: rgba(255,255,255,0.85); font-size: 14px; cursor: pointer;
+  color: rgba(255,255,255,0.88); font-size: 15px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.2s; font-family: inherit;
 }
@@ -2275,7 +2277,7 @@ window.addEventListener('resize', () => { if (phoneMode) setupPhonePreview(); })
 currentVisualSettings = captureSettings();
 
 // ── Demo Mode ──
-// Edit DEMO_QA to customise the Q&A bubbles
+// Edit DEMO_QA to customise Q&A content
 const DEMO_QA = [
   {
     q: "I lost my passport in Bangkok, but Hungary has no embassy here. What do I do?",
@@ -2283,38 +2285,34 @@ const DEMO_QA = [
   },
   {
     q: "My train was delayed and I missed my connecting flight. Am I entitled to compensation?",
-    a: "Yes — EU law covers you here.\n\nUnder EC 261/2004, if your delay causes you to miss a connecting flight booked as one ticket and you arrive 3+ hours late, you're entitled to compensation of €250–€600 depending on distance.\n\nContact your airline in writing within 6 months. If they refuse, escalate to your national enforcement body."
+    a: "Yes — EU law covers you here.\n\nUnder EC 261/2004, if your delay causes you to miss a connecting flight booked as one ticket and you arrive 3+ hours late, you're entitled to €250–€600 depending on distance.\n\nContact your airline in writing. If they refuse, escalate to your national enforcement body."
   },
   {
-    q: "I'm working in another EU country. Do I need a new health insurance?",
-    a: "Not necessarily.\n\nAs an EU citizen working abroad, you're covered by the social security system of the country where you work — not your home country.\n\nYour employer should register you. You'll get a local health card. Your European Health Insurance Card (EHIC) from home remains valid for temporary stays but not for your new country of residence."
+    q: "I'm working in another EU country. Do I need new health insurance?",
+    a: "Not necessarily.\n\nAs an EU citizen working abroad, you're covered by the social security system of the country where you work.\n\nYour employer should register you. Your European Health Insurance Card (EHIC) from home remains valid for temporary stays but not for your new country of residence."
   }
 ];
 
-let demoActive = false;
-let demoPhase  = 'idle';
-let demoTimer  = 0;
-let demoQaIndex = 0;
-let _demoMirrorId = null;
-
-const DEMO_DUR = { idle: 60, listening: 220, speaking: 340 };
+let demoActive = false, demoPhase = 'idle', demoTimer = 0, demoQaIndex = 0;
+let _demoMirrorId = null, _demoTypeTimer = null;
+const DEMO_DUR = { idle: 50, listening: 200, speaking: 360 };
+const DEMO_TYPE_SPEED = 22; // ms per character
 
 function openDemo() {
   if (!presets.length) return;
-  demoActive  = true;
-  demoPhase   = 'idle';
-  demoTimer   = DEMO_DUR.idle;
-  demoQaIndex = 0;
+  demoActive = true; demoPhase = 'idle'; demoTimer = DEMO_DUR.idle; demoQaIndex = 0;
   document.getElementById('demo-overlay').style.display = 'flex';
-  _updateDemoUI();
+  _clearDemoBubble();
+  document.getElementById('demo-status').textContent = '';
   _startDemoMirror();
   playAll();
 }
 
 function closeDemo() {
   demoActive = false;
+  if (_demoMirrorId)  { cancelAnimationFrame(_demoMirrorId); _demoMirrorId = null; }
+  if (_demoTypeTimer) { clearInterval(_demoTypeTimer); _demoTypeTimer = null; }
   document.getElementById('demo-overlay').style.display = 'none';
-  if (_demoMirrorId) { cancelAnimationFrame(_demoMirrorId); _demoMirrorId = null; }
   stopSequence();
 }
 
@@ -2323,52 +2321,64 @@ function _startDemoMirror() {
   (function mirror() {
     if (!demoActive) return;
     const dc = document.getElementById('demo-canvas');
-    if (dc && canvas) {
-      const ctx = dc.getContext('2d');
-      ctx.clearRect(0, 0, 600, 600);
-      ctx.drawImage(canvas, 0, 0, 600, 600);
-    }
+    if (dc && canvas) { const ctx = dc.getContext('2d'); ctx.clearRect(0,0,600,600); ctx.drawImage(canvas,0,0,600,600); }
     _demoMirrorId = requestAnimationFrame(mirror);
   })();
+}
+
+function _clearDemoBubble() {
+  if (_demoTypeTimer) { clearInterval(_demoTypeTimer); _demoTypeTimer = null; }
+  const wrap = document.getElementById('demo-bubble-wrap');
+  const bb   = document.getElementById('demo-bubble');
+  if (wrap) wrap.classList.remove('open');
+  if (bb)   bb.textContent = '';
+}
+
+function _typeIntoBubble(text) {
+  const wrap = document.getElementById('demo-bubble-wrap');
+  const bb   = document.getElementById('demo-bubble');
+  if (!wrap || !bb) return;
+  if (_demoTypeTimer) { clearInterval(_demoTypeTimer); _demoTypeTimer = null; }
+  bb.textContent = '';
+  // expand wrap first so height animates
+  wrap.classList.add('open');
+  let i = 0;
+  _demoTypeTimer = setInterval(() => {
+    if (!demoActive) { clearInterval(_demoTypeTimer); return; }
+    if (i < text.length) {
+      bb.textContent += text[i++];
+    } else {
+      clearInterval(_demoTypeTimer);
+      _demoTypeTimer = null;
+    }
+  }, DEMO_TYPE_SPEED);
 }
 
 function demoTick() {
   if (!demoActive) return;
   if (--demoTimer > 0) return;
-  if      (demoPhase === 'idle')      { demoPhase = 'listening'; demoTimer = DEMO_DUR.listening; }
-  else if (demoPhase === 'listening') { demoPhase = 'speaking';  demoTimer = DEMO_DUR.speaking;  }
+  if      (demoPhase === 'idle')      { demoPhase = 'listening'; demoTimer = DEMO_DUR.listening; _showListening(); }
+  else if (demoPhase === 'listening') { demoPhase = 'speaking';  demoTimer = DEMO_DUR.speaking;  _showSpeaking();  }
   else {
     demoQaIndex = (demoQaIndex + 1) % DEMO_QA.length;
-    demoPhase   = 'idle';
-    demoTimer   = DEMO_DUR.idle;
+    demoPhase = 'idle'; demoTimer = DEMO_DUR.idle;
+    _clearDemoBubble();
+    document.getElementById('demo-status').textContent = '';
   }
-  _updateDemoUI();
 }
 
-function _updateDemoUI() {
-  const stEl = document.getElementById('demo-status');
-  const bbEl = document.getElementById('demo-bubble');
-  if (!stEl || !bbEl) return;
-  const qa = DEMO_QA[demoQaIndex % DEMO_QA.length] || {};
+function _showListening() {
+  const qa = DEMO_QA[demoQaIndex % DEMO_QA.length];
+  document.getElementById('demo-status').textContent = 'Listening...';
+  _clearDemoBubble();
+  setTimeout(() => { if (demoActive) _typeIntoBubble(qa.q); }, 400);
+}
 
-  bbEl.classList.remove('visible');
-  setTimeout(() => {
-    if (demoPhase === 'idle') {
-      stEl.textContent = '';
-      bbEl.innerHTML = '';
-      bbEl.style.display = 'none';
-    } else {
-      bbEl.style.display = '';
-      if (demoPhase === 'listening') {
-        stEl.textContent = 'Listening...';
-        bbEl.innerHTML = qa.q ? qa.q.replace(/\n/g, '<br>') : '';
-      } else {
-        stEl.textContent = 'Speaking...';
-        bbEl.innerHTML = qa.a ? qa.a.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>') : '';
-      }
-      requestAnimationFrame(() => requestAnimationFrame(() => bbEl.classList.add('visible')));
-    }
-  }, 320);
+function _showSpeaking() {
+  const qa = DEMO_QA[demoQaIndex % DEMO_QA.length];
+  document.getElementById('demo-status').textContent = 'Speaking...';
+  _clearDemoBubble();
+  setTimeout(() => { if (demoActive) _typeIntoBubble(qa.a); }, 400);
 }
 
 loop();
@@ -2380,8 +2390,8 @@ loop();
     <div class="demo-canvas-wrap">
       <canvas id="demo-canvas" width="600" height="600"></canvas>
     </div>
-    <div class="demo-bubble-area">
-      <div id="demo-bubble" class="demo-bubble"></div>
+    <div class="demo-bubble-wrap" id="demo-bubble-wrap">
+      <div class="demo-bubble" id="demo-bubble"></div>
     </div>
     <button class="demo-close" onclick="closeDemo()" title="Close">&#9733;</button>
   </div>
